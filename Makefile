@@ -32,6 +32,7 @@ OBJS = $(CSRCS:%.c=%.o) $(ASRCS:%.S=%.o)
 
 CC = $(TOOLCHAIN)-gcc 
 OBJCOPY = $(TOOLCHAIN)-objcopy
+READELF = $(TOOLCHAIN)-readelf
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
@@ -46,7 +47,7 @@ image: $(MN_FILE)
 	$(OBJCOPY) -O binary $(MN_FILE) image.bin
 
 size:
-	readelf -S $(MN_FILE)
+	$(READELF) -S $(MN_FILE)
 
 clean:
 	rm $(OBJS) $(MN_FILE) image.bin
