@@ -12,6 +12,11 @@ This is exceptionally hard since the rv32i implementation does not include traps
 3. run `make image`
 4. profit
 
+You can also get a compile_commands.json by doing the following in the project root:
+`bash
+bear -- make
+`
+
 ## Contributing
 
 work in progress...
