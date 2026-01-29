@@ -1,22 +1,22 @@
 #pragma once
-#include "../include/fs.h"
+#include "../kernel/include/fs.h"
 
-#define FS_DENTRY_MAXCHILDREN 10
-struct dentry_t {
-    uint8_t next[FS_DENTRY_MAXCHILDREN];
-    uint8_t prev;
-    uint8_t refcount;
-    struct inode_t* i; //this holds the inode of this dir
-    struct superblock_t* mount; //this holds a mountpoint
+#define DENTRY_MAX_CHILDREN 7
+#define DENTRY_CHILD_COUNT_MSK 0b111111
+#define DENTRY_MOUNT_POINT_MSK (1 << 6)
+#define DENTRY_LOCKED_MSK (1 << 7)
+struct dentry {
+    uint8_t children[DENTRY_MAX_CHILDREN];
+    uint8_t packed; //uint child_count : 0-5, bool mount_point : 6, bool locked : 7
+    struct inode* dir;
+    struct superblock* fs;
 };
 
-#define FS_DENTRY_POOL_LEN 10
-extern struct dentry dentry_pool[FS_DENTRY_POOL_LEN];
-
-extern uint8_t dentry_free_list[FS_DENTRY_POOL_LEN];
-extern uint8_t dentry_free_list_top;
-
+#define DENTRY_MAX 20
+#define DENTRY_INDEX_NIL 255
+#define DENTRY_ROOT 0
+extern dentry dentry_pool[DENTRY_MAX];
 
 uint8_t dentry_local_lookup(uint8_t dentry_index, char* name);
-struct dentry_t* dentry_lookup(const char* path);
+uint8_t dentry_lookup(const char* path);
 
