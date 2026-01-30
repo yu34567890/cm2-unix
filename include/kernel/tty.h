@@ -26,7 +26,7 @@ struct device* tty_lookup(uint8_t minor);
 uint32_t tty_read(struct device* dev, void* buffer, uint32_t count, uint32_t offset);
 
 //write bytes to the tty
-uint32_t tty_write(struct device* dev, void* buffer, uint32_t count, uint32_t offset);
+uint32_t tty_write(struct device* dev, const void* buffer, uint32_t count, uint32_t offset);
 
 int tty_ioctl(struct device* dev, int cmd, void* arg);
 

@@ -6,6 +6,8 @@
 
 //the hardware interface implementation
 struct tty_hardware_interface {
+    char input_character;
+    uint8_t input_ready;
     uint8_t clear;
     uint8_t write;
     char character;
@@ -76,7 +78,7 @@ uint32_t tty_read(struct device* dev, void* buffer, uint32_t count, uint32_t off
 }
 
 //write bytes to the tty
-uint32_t tty_write(struct device* dev, void* buffer, uint32_t count, uint32_t offset)
+uint32_t tty_write(struct device* dev, const void* buffer, uint32_t count, uint32_t offset)
 {
     struct tty_device* tty = (struct tty_device*) dev;
     struct tty_hardware_interface* tty_interface = tty->tty;
