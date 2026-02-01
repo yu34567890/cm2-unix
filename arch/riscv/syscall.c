@@ -4,14 +4,18 @@
 
 uint32_t syscall_args[4]; //arguments registers, we only need a0 to a3 right now
 
-#define SYSCALL_COUNT 1
+#define SYSCALL_COUNT 3
 
 void (*syscall_setup_table[])() = {
-    &dev_write
+    &dev_write,
+    &yield,
+    &exit
 };
 
 void (*syscall_update_table[])(struct proc* process) = {
-    &dev_write_update
+    &dev_write_update,
+    NULL,
+    NULL
 };
 
 //syscall from user process
@@ -38,6 +42,17 @@ void dev_write_update(struct proc* process)
         proc_enqueue(process); //allow the process to be executed again
         process->syscall_state = SYSCALL_STATE_NIL;
     }
+}
+
+void yield()
+{
+    //yield does nothing lol
+}
+
+void exit()
+{
+    current_process->state = BLOCKED;
+    proc_delete(current_process);
 }
 
 void syscall_update()
