@@ -25,8 +25,10 @@ SECTIONS
 
   .bss  : {
     *(.bss*)
+    *(.sbss*)
     *(COMMON) 
   } > RAM
-
-  _stack_top = . + 4K; /* everything above the stack is userspace */
+  
+  _stack_top = ORIGIN(RAM) + LENGTH(RAM);
+  _stack_bottom = _stack_top - 2K;
 }
