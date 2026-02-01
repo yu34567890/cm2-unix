@@ -9,7 +9,7 @@ dev_t tty0_devno;
 struct device* tty0;
 dev_t disk0_devno;
 
-uint8_t init_thread_stack[64] __attribute__((aligned(16)));
+[[gnu::aligned(16)]] uint8_t init_thread_stack[64];
 
 void init_thread() {
     char test[] = "CM2-UNIX V0.1.0\nBooting...\n";
@@ -19,11 +19,21 @@ void init_thread() {
     device_create(&disk0_devno, GEN_DISK_MAJOR, (void*) 0xFFC3);
 
     syscall(0, tty0_devno, (uint32_t) &test1, sizeof(test1) - 1);
-   
-    //exit();
+    
+    while(1) {
+        syscall(1, 0, 0, 0); //yield();
+    }
+}
+
+[[gnu::aligned(16)]] uint8_t test_thread_stack[64];
+
+void test_thread() {
+    char test[] = "Hello world!\n";
+    //dev_write(tty0_devno, &test, sizeof(test)-1);
+    syscall(0, tty0_devno, (uint32_t) &test, sizeof(test) - 1);
+
+    //exit()
     syscall(2, 0, 0, 0);
-    debug('N');
-    while(1) {};
 }
 
 void main() {
@@ -37,8 +47,9 @@ void main() {
 
     tty0 = device_create(&tty0_devno, TTY_MAJOR, (void*) 0xFFF1);
     
-    proc_create((uint32_t) &init_thread, (uint32_t) &init_thread_stack[63]);
-    
+    proc_create((uint32_t) &init_thread, (uint32_t) &init_thread_stack + 64);
+    proc_create((uint32_t) &test_thread, (uint32_t) &test_thread_stack + 64);
+
     //bootstrap the scheduler by getting the first process to run
     current_process = proc_dequeue();
     exit_kernel(); //jump into the current process
