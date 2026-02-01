@@ -1,4 +1,3 @@
-#include <stdint.h>
 #include <lib/stdlib.h>
 
 uint32_t strnlen(const char* str, uint32_t max_size)
@@ -47,11 +46,13 @@ void memset(void* dest, uint32_t size, uint8_t value)
     }
 }
 
-void memcpy(void* dest, void* source, uint32_t size)
+
+[[gnu::used]] void* memcpy(void* dest, void* source, size_t size)
 {
     while(size-- > 0) {
         ((uint8_t*) dest)[size] = ((uint8_t*) source)[size];
     }
+    return dest;
 }
 
 
