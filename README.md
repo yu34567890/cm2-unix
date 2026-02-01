@@ -19,8 +19,14 @@ You can also get a compile_commands.json by doing the following in the project r
 bear -- make
 `
 
+## Running
+
+1. Install [cm2-riscv-emulator](https://github.com/Qxtdl/cm2-riscv-emulator)
+2. Build instructions are in the emulator repository
+3. run `./cm2-riscv-emulator /path/to/image.bin`
+
 ## Contributing
 
-Contributions are very much apreciated, the project is still in the early stages so a lot will change.
+Contributions are very much apreciated, the project is still in the early stages so a lot will change. There is a TODO list with things that should be done and it will hopefully continuously be updated.
 
 
