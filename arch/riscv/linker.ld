@@ -3,7 +3,7 @@ ENTRY(_start)
 MEMORY
 {
   ROM (rx)   : ORIGIN = 0x0000, LENGTH = 16K /* kernel .text and .rodata */
-  RAM (rwx)  : ORIGIN = 0x2800, LENGTH = 8K /* kernel .data .bss and stack */
+  RAM (rwx)  : ORIGIN = 0x4000, LENGTH = 8K /* kernel .data .bss and stack */
   MMIO (rw) : ORIGIN = 0xFC00, LENGTH = 1K /* 1k mmio */
 }
 
