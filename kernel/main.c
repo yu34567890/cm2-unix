@@ -19,8 +19,11 @@ void init_thread() {
     device_create(&disk0_devno, GEN_DISK_MAJOR, (void*) 0xFFC3);
 
     syscall(0, tty0_devno, (uint32_t) &test1, sizeof(test1) - 1);
-
-    while (1) {};
+   
+    //exit();
+    syscall(2, 0, 0, 0);
+    debug('N');
+    while(1) {};
 }
 
 void main() {
