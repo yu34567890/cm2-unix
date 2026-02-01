@@ -24,7 +24,7 @@ LNKP ?=
 
 MN_FILE ?= main.elf
 
-CFLAGS ?= -march=rv32i -mabi=ilp32 -fno-pic -fno-pie -ffreestanding -Os -Wall -Wextra -Wno-unused-parameter $(INCL)
+CFLAGS ?= -march=rv32i -mabi=ilp32 -ffreestanding -Os -Wall -Wextra -Wno-unused-parameter $(INCL)
 
 LDFLAGS ?= -nostdlib -nostartfiles -static -march=rv32i -mabi=ilp32 -Os
 
@@ -50,5 +50,8 @@ size:
 	$(READELF) -S $(MN_FILE)
 
 clean:
-	rm $(OBJS) $(MN_FILE) image.bin
+	rm -f $(OBJS) $(MN_FILE) image.bin
+
+rebuild: clean image size
+
 
