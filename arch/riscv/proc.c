@@ -1,7 +1,7 @@
 #include <kernel/proc.h>
 #include <kernel/device.h>
-#include <fs/vfs.h>
 #include <lib/stdlib.h>
+#include <kernel/syscall.h>
 #include <stddef.h>
 
 struct proc process_table[MAX_PROCESSES];
@@ -62,14 +62,16 @@ struct proc* proc_create(uint32_t entry_point, uint32_t stack_pointer) {
     
     uint8_t tmp = free_processes_count;
     if (tmp == 0) return NULL;
-    struct proc* new_process = &process_table[free_processes[--tmp]];
+    uint8_t index = free_processes[--tmp];
+    struct proc* new_process = &process_table[index];
     free_processes_count = tmp;
 
-    
+    new_process->pid = index;
     new_process->return_adres = entry_point;
     new_process->user_sp = stack_pointer;
     new_process->state = READY;
     new_process->return_value = 0;
+    new_process->syscall_state = SYSCALL_STATE_NIL;
     
     proc_enqueue(new_process);
     return new_process;
@@ -77,8 +79,7 @@ struct proc* proc_create(uint32_t entry_point, uint32_t stack_pointer) {
 
 void proc_delete(struct proc* process) {
     process->state = BLOCKED;
-    uint8_t index = process - process_table;
-    free_processes[free_processes_count++] = index;
+    free_processes[free_processes_count++] = process->pid;
 }
 
 void proc_update()
@@ -93,9 +94,11 @@ void proc_update()
     //get a new process from the top of the queue
     struct proc* new_process = NULL;
     while(new_process == NULL) {
-        new_process = proc_dequeue();
         device_update(); //do a kernel 'tick' basicly call all update functions
-        vfs_update();
+        syscall_update();
+
+        new_process = proc_dequeue();
     }
+    current_process = new_process;
 }
 

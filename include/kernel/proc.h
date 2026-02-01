@@ -1,13 +1,27 @@
 #pragma once
 #include <stdint.h>
+#include <kernel/device.h>
 
+enum proc_state : uint8_t {
+    BLOCKED,
+    READY
+};
+
+#define SYSCALL_STATE_NIL 255
+#define SYSCALL_STATE_BEGIN 0
 //this should be made cross platform but i dont care anymore
 struct proc {
     uint32_t return_adres;
     uint32_t user_sp;
     uint32_t saved_regs[12];
     uint32_t return_value;
-    enum : uint8_t { BLOCKED, READY } state;
+    enum proc_state state;
+
+    //this is for syscalls to remember how far they have progressed
+    uint8_t syscall_state;
+    uint8_t syscall_operation;
+    uint8_t pid; //maybe il find a use later
+    struct device_request* dev_req;
 };
 
 #define MAX_PROCESSES 4
