@@ -9,11 +9,16 @@ dev_t tty0_devno;
 struct device* tty0;
 dev_t disk0_devno;
 
-uint8_t init_thread_stack[64];
+uint8_t init_thread_stack[64] __attribute__((aligned(16)));
 
 void init_thread() {
     char test[] = "CM2-UNIX V0.1.0\nBooting...\n";
+    char test1[] = "registered disk0 at 0xFFC3\n";
     syscall(0, tty0_devno, (uint32_t) &test, sizeof(test) - 1);
+    
+    device_create(&disk0_devno, GEN_DISK_MAJOR, (void*) 0xFFC3);
+
+    syscall(0, tty0_devno, (uint32_t) &test1, sizeof(test1) - 1);
 
     while (1) {};
 }
