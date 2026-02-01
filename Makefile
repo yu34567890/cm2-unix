@@ -25,14 +25,23 @@ LNKP ?=
 MN_FILE ?= main.elf
 
 # IF debugging stack faliures:
-# Uncomment below code and switch -O2 flag to -Os
+# make DEBUG=true
 
-OPTIMIZATION = -O2
+DEBUG ?= false
 
-CFLAGS ?= -march=rv32i -mabi=ilp32 -ffreestanding $(OPTIMIZATION) -Wall -Wextra -Wno-unused-parameter $(INCL) \
-	-g -fstack-protector-all -fverbose-asm
+CFLAGS ?= -march=rv32i -mabi=ilp32 -ffreestanding -Wall -Wextra -Wno-unused-parameter $(INCL)
 
-LDFLAGS ?= -nostdlib -nostartfiles -static -march=rv32i -mabi=ilp32 $(OPTIMIZATION)
+LDFLAGS ?= -nostdlib -nostartfiles -static -march=rv32i -mabi=ilp32
+
+
+ifeq ($(DEBUG), true)
+	CFLAGS += -g -fstack-protector-all -fverbose-asm -O2
+	LDFLAGS += -O2
+else
+	CFLAGS += -Os
+	LDFLAGS += -Os
+endif
+
 
 OBJS = $(CSRCS:%.c=%.o) $(ASRCS:%.S=%.o)
 
@@ -51,7 +60,7 @@ $(MN_FILE): $(OBJS)
 
 image: $(MN_FILE)
 	$(OBJCOPY) -O binary $(MN_FILE) image.bin
-	python $(ROOT)/arch/$(ARCH)/$(ARCH)_encoder.py image.bin
+	/bin/env python3 $(ROOT)/arch/$(ARCH)/$(ARCH)_encoder.py image.bin
 
 size:
 	$(READELF) -S $(MN_FILE)
