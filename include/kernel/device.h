@@ -15,8 +15,9 @@ typedef uint8_t dev_t;
 
 struct device_request {
     void* buffer;
-    uint32_t count : 24;
-    uint8_t operation : 8;
+    uint16_t count;
+    uint8_t index;
+    uint8_t operation;
     uint32_t offset : 24;
     uint8_t state : 8;
 };
@@ -51,11 +52,21 @@ int device_queue_action(struct device* dev, struct device_request* req);
 //this is only for internal driver use
 struct device_request* device_queue_pop(struct device* dev);
 
-#define DEVICE_DRIVER_MAX 16
+#define DEVICE_DRIVER_MAX 4
 extern struct device_driver driver_registry[DEVICE_DRIVER_MAX];
+#define DEVICE_REQ_TBL_LEN 6
 
+struct device_request* device_newreq(void* buffer, uint32_t count, uint32_t offset, uint8_t operation);
+void device_free_req(struct device_request* req); 
 struct device* device_create(dev_t* devno, uint8_t major, const void* args);
 struct device* device_lookup(dev_t devno);
 int device_destroy(dev_t devno);
+void device_init();
 void device_update(); //global device update
+
+
+
+void debug(char chr);
+
+
 

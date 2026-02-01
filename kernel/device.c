@@ -3,6 +3,9 @@
 
 struct device_driver driver_registry[DEVICE_DRIVER_MAX];
 
+struct device_request request_table[DEVICE_REQ_TBL_LEN];
+uint8_t request_table_free[DEVICE_REQ_TBL_LEN];
+uint8_t request_table_free_len;
 
 int device_queue_action(struct device* dev, struct device_request* req)
 {
@@ -25,6 +28,28 @@ struct device_request* device_queue_pop(struct device* dev)
     
     return req;
 }
+
+struct device_request* device_newreq(void* buffer, uint32_t count, uint32_t offset, uint8_t operation) {
+    uint8_t tmp = request_table_free_len;
+    if (tmp == 0) return NULL;
+    uint8_t index = request_table_free[--tmp];
+    struct device_request* new = &request_table[index];
+    request_table_free_len = tmp;
+
+    new->buffer = buffer;
+    new->count = count;
+    new->index = index;
+    new->operation = operation;
+    new->offset = offset;
+    new->state = DEVICE_STATE_PENDING;
+    
+    return new;
+}
+
+void device_free_req(struct device_request* req) {
+    request_table_free[request_table_free_len++] = req->index;
+}
+
 
 struct device* device_create(dev_t* devno, uint8_t major, const void* args)
 {
@@ -69,6 +94,13 @@ int device_destroy(dev_t devno)
     return driver->destroy(minor);
 }
 
+void device_init() {
+    request_table_free_len = DEVICE_REQ_TBL_LEN;
+    for (int i = 0; i < DEVICE_REQ_TBL_LEN; i++) {
+        request_table_free[i] = i;
+    }
+}
+
 void device_update() {
     for (int i = 0; i < DEVICE_DRIVER_MAX; i++) {
         struct device_driver* driver = &driver_registry[i];
@@ -77,5 +109,11 @@ void device_update() {
         }
         driver->update();
     }
+}
+
+void debug(char chr) {
+    *((volatile char*) 0xFFF5) = chr;
+    *((volatile uint8_t*) 0xFFF4) = 1;
+    *((volatile uint8_t*) 0xFFF6) = *((uint8_t*)0xFFF6) + 1;
 }
 
