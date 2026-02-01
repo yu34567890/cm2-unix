@@ -29,17 +29,18 @@ MN_FILE ?= main.elf
 
 DEBUG ?= false
 
-CFLAGS ?= -march=rv32i -mabi=ilp32 -ffreestanding -Wall -Wextra -Wno-unused-parameter $(INCL)
-
-LDFLAGS ?= -nostdlib -nostartfiles -static -march=rv32i -mabi=ilp32
+CFLAGS = -march=rv32i -mabi=ilp32 -ffreestanding -Wall -Wextra -Wno-unused-parameter $(INCL)
+ASFLAGS = $(CFLAGS)
+LDFLAGS = -nostdlib -nostartfiles -static -march=rv32i -mabi=ilp32
 
 
 ifeq ($(DEBUG), true)
 	CFLAGS += -g -fstack-protector-all -fverbose-asm -O2 -D__DEBUG__
 	LDFLAGS += -O2
 else
-	CFLAGS += -Os
-	LDFLAGS += -Os
+	CFLAGS += -Os -flto
+	LDFLAGS += -Os -flto
+	ASFLAGS += -fno-lto
 endif
 
 
