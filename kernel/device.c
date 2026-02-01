@@ -47,6 +47,7 @@ struct device_request* device_newreq(void* buffer, uint32_t count, uint32_t offs
 }
 
 void device_free_req(struct device_request* req) {
+    req->state = DEVICE_STATE_PENDING;
     request_table_free[request_table_free_len++] = req->index;
 }
 
