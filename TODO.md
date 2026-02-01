@@ -2,9 +2,11 @@
 # TODO's
 
 ## General
-* seperate architecture dependent code better
-* add configuration ability to makefile using either a .conf file or text user interface
-* make buffer and queue sizes configurable via makefile
+* seperate architecture dependent code better.
+* add configuration ability to makefile using either a .conf file or text user interface.
+* make buffer and queue sizes configurable via makefile.
+* make kernel panic more descriptive, i.e show more registers and status.
+* add error handeling to most of the kernel code like returning proper error codes and calling panic() in unrecoverable errors.
 
 ## VFS
 
