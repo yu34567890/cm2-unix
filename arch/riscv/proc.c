@@ -82,8 +82,6 @@ void proc_delete(struct proc* process) {
     if (process->state == DEAD) {
         process->state = UNALLOCATED;
         free_processes[free_processes_count++] = process->pid;
-    } else if (process->state == UNALLOCATED) {
-        panic();
     }
 }
 
