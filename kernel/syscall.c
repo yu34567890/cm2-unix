@@ -105,7 +105,7 @@ void waitpid_update(struct proc* process)
 {
     struct proc* target_proc = &process_table[process->waitpid_state.target_pid];
 
-    if (target_proc->state == DEAD) {
+    if (target_proc->state == UNALLOCATED) {
         process->state = READY;
         process->return_value = target_proc->return_value;
         proc_enqueue(process);
