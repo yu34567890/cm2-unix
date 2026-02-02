@@ -3,7 +3,9 @@ ARCH ?= riscv
 
 TOOLCHAIN ?= riscv64-unknown-elf
 
-ROOT ?= .
+ROOT ?= $(PWD)
+
+EMULATOR ?= $(ROOT)/emulator/riscv/cm2-riscv-emulator
 
 #source files
 CSRCS = $(wildcard $(ROOT)/fs/*.c) \
@@ -62,6 +64,12 @@ $(MN_FILE): $(OBJS)
 image: $(MN_FILE)
 	$(OBJCOPY) -O binary $(MN_FILE) image.bin
 	/bin/env python3 $(ROOT)/scripts/$(ARCH)_encoder.py image.bin
+
+run: image.bin
+	$(MAKE) -C $(EMULATOR) run ROOT="$(EMULATOR)" OUTPUT_ARGS="$(ROOT)/image.bin $(EMULATOR)/emulator-tilesheet/minesweeper.bmp"
+
+tools:
+	$(MAKE) -C $(EMULATOR) all ROOT="$(EMULATOR)"
 
 size:
 	$(READELF) -S $(MN_FILE)
