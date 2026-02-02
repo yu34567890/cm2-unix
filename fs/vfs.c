@@ -1,6 +1,7 @@
+#include <fs/vfs.h>
+
 #include <stddef.h>
 #include <fs/fs.h>
-#include <fs/vfs.h>
 #include <kernel/proc.h>
 #include <lib/stdlib.h>
 

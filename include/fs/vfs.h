@@ -28,7 +28,8 @@ typedef struct {
 
 
 //vfs api
-int vfs_open(const char* path, uint8_t flags);
+void vfs_open(const char* path, uint8_t flags);
+
 int vfs_read(int fd, void* buffer, uint32_t count);
 int vfs_write(int fd, const void* buffer, uint32_t count);
 int vfs_lstat(int fd, struct stat* statbuff);
