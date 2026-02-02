@@ -4,11 +4,12 @@
 
 uint32_t syscall_args[4]; //arguments registers, we only need a0 to a3 right now
 
-#define SYSCALL_COUNT 4
+#define SYSCALL_COUNT 5
 
 void (*syscall_setup_table[])() = {
     &dev_write,
     &dev_read,
+    &dev_ioctl,
     &yield,
     &exit
 };
@@ -16,6 +17,7 @@ void (*syscall_setup_table[])() = {
 void (*syscall_update_table[])(struct proc* process) = {
     &dev_write_update,
     &dev_read_update,
+    NULL,
     NULL,
     NULL
 };
@@ -68,6 +70,12 @@ void dev_read_update(struct proc* process)
         proc_enqueue(process); //allow the process to be executed again
         process->syscall_state = SYSCALL_STATE_NIL;
     }
+}
+
+//int dev_ioctl(dev_t devno, int cmd, void* arg)
+void dev_ioctl() {
+    struct device* dev = device_lookup(syscall_args[1]);
+    current_process->return_value = dev->ops->ioctl(dev, syscall_args[2], (void*) syscall_args[3]);
 }
 
 void yield()

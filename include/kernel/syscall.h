@@ -7,6 +7,7 @@ void dev_write();
 void dev_write_update(struct proc* process);
 void dev_read();
 void dev_read_update(struct proc* process);
+void dev_ioctl();
 void yield();
 void exit();
 
