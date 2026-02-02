@@ -14,12 +14,11 @@ dev_t disk0_devno;
 
 [[gnu::aligned(16)]] uint8_t init_thread_stack[64];
 
-int8_t init_thread_exit;
 
 void init_thread() {
-    const char *test = "CM2-UNIX V0.2.2\nBooting...\n";
+    const char *test = "CM2-UNIX V0.2.3\nBooting...\n";
     const char *test1 = "registered disk0 at 0xFFC3\n";
-    init_thread_exit = 0;
+
     syscall(0, tty0_devno, (uint32_t) test, strnlen(test, 32));
     
     device_create(&disk0_devno, GEN_DISK_MAJOR, (void*) 0xFFC3);
@@ -31,14 +30,13 @@ void init_thread() {
         tilegpu_puts(0, y, "Hello World!");
     }
 
-    init_thread_exit = 1;
-    syscall(4, 0, 0, 0); //exit()
+    syscall(4, 0, 0, 0); //exit(0)
 }
 
 [[gnu::aligned(16)]] uint8_t test_thread_stack[128];
 char shell_name[] = "Shell v0.1.1\n";
 char prompt[] = "# ";
-char uname[] = "CM2-UNIX V0.2.2\nbuild: " __DATE__ "\n";
+char uname[] = "CM2-UNIX V0.2.3\nbuild: " __DATE__ "\n";
 char bad_command[] = "-shell: bad cmd\n";
 
 void test_thread() {
@@ -67,7 +65,7 @@ void test_thread() {
         }
     }
 
-    //exit()
+    //exit(0)
     syscall(4, 0, 0, 0);
 }
 
@@ -83,7 +81,7 @@ void main() {
     tty0 = device_create(&tty0_devno, TTY_MAJOR, (void*) 0xFFF1);
     
     proc_create((uint32_t) &init_thread, (uint32_t) &init_thread_stack + 64);
-    proc_create((uint32_t) &test_thread, (uint32_t) &test_thread_stack + 64);
+    proc_create((uint32_t) &test_thread, (uint32_t) &test_thread_stack + 128);
 
     //bootstrap the scheduler by getting the first process to run
     current_process = proc_dequeue();
