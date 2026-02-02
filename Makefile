@@ -5,6 +5,7 @@ TOOLCHAIN ?= riscv64-unknown-elf
 
 ROOT ?= $(PWD)
 
+RAYLIB ?= false
 EMULATOR ?= $(ROOT)/emulator/riscv/cm2-riscv-emulator
 
 #source files
@@ -69,7 +70,7 @@ run: image.bin
 	$(MAKE) -C $(EMULATOR) run ROOT="$(EMULATOR)" OUTPUT_ARGS="$(ROOT)/image.bin $(EMULATOR)/emulator-tilesheet/minesweeper.bmp"
 
 tools:
-	$(MAKE) -C $(EMULATOR) all ROOT="$(EMULATOR)"
+	$(MAKE) -C $(EMULATOR) all ROOT="$(EMULATOR)" RAYLIB="$(RAYLIB)" OPTIMIZE=true
 
 size:
 	$(READELF) -S $(MN_FILE)
