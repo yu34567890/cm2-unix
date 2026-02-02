@@ -5,6 +5,28 @@
 //register a file system with a 4 letter name
 void register_filesystem(const char* name, struct super_ops* fs);
 
+
+
+typedef struct {
+    char path_cpy[FS_PATH_LEN];
+    char* path_ptr;
+    char* current_word;
+    struct superblock* fs;
+    struct inode* dir;
+} path_walk_t;
+
+
+typedef struct {
+    path_walk_t walker;
+} vfs_open_t;
+
+
+
+
+
+
+
+
 //vfs api
 int vfs_open(const char* path, uint8_t flags);
 int vfs_read(int fd, void* buffer, uint32_t count);

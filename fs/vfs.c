@@ -1,6 +1,5 @@
 #include <stddef.h>
 #include <fs/fs.h>
-#include <fs/dcache.h>
 #include <fs/vfs.h>
 #include <kernel/proc.h>
 #include <lib/stdlib.h>
@@ -42,22 +41,53 @@ int fd_alloc()
     return -1;
 }
 
-
-
-int vfs_open(const char* path, uint8_t flags)
+void walk_path_init(path_walk_t* state, const char* path)
 {
-    /* work in progress
-    
-    struct dentry* file_dentry = &dentry_pool[dentry_lookup(path)];
-    
-    int file_descriptor = fd_alloc();
-    struct fd* file_ptr = &fd_table[file_descriptor];
-    file_ptr->file = file_dentry->dir;
-    file_ptr->offset = 0;
-    file_ptr->flags = flags;
-    */
-    return -1;
+    strncpy(state->path_cpy, (char*) path, FS_PATH_LEN);
+    state->current_word = state->path_cpy;
+    state->path_ptr = state->path_cpy;
+    state->dir = NULL;
 }
+
+uint8_t walk_path(path_walk_t* state)
+{
+    if (*state->path_ptr == '\0') {
+        state->dir = state->fs->sops->lookup(state->fs, state->dir, state->current_word);
+        return 1;
+    }
+
+    if (*state->path_ptr == '/') {
+        *state->path_ptr = '\0';
+        struct inode* next = state->fs->sops->lookup(state->fs, state->dir, state->current_word);
+        state->dir = next;
+        if (next == NULL) {
+            return 2; //directory not found
+        }
+        
+        state->current_word = state->path_ptr + 1;
+    }
+    state->path_ptr++;
+    return 0;
+}
+
+
+void vfs_open(const char* path, uint8_t flags)
+{
+    struct proc* process = current_process;
+    walk_path_init(&process->open_state.walker, path);
+    process->open_state.walker.fs = NULL;
+}
+
+void vfs_open_update(struct proc* process)
+{
+    uint8_t rt = walk_path(&process->open_state.walker);
+    if (rt == 2) { //directory not found
+        
+    } else if (rt == 1) { //we walked the entire path
+        
+    }
+}
+
 
 int vfs_read(int fd, void* buffer, uint32_t count)
 {
