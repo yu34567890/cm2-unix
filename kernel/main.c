@@ -36,10 +36,8 @@ char bad_command[] = "-shell: bad cmd\n";
 
 void test_thread() {
     
-    //bodged pidwait
-    while(init_thread_exit == 0) {
-        syscall(3, 0, 0, 0); //yield()
-    };
+    //waitpid(3);
+    syscall(5, 3, 0, 0);
 
     //dev_write(tty0_devno, &test, sizeof(test)-1);
     syscall(0, tty0_devno, (uint32_t) &shell_name, sizeof(shell_name) - 1);
