@@ -21,9 +21,9 @@ bear -- make
 
 ## Running
 
-1. Install [cm2-riscv-emulator](https://github.com/Qxtdl/cm2-riscv-emulator)
-2. Build instructions are in the emulator repository
-3. run `./cm2-riscv-emulator /path/to/image.bin`
+1. run `git submodule init && git submodule update`
+2. run `make tools`
+3. run `make run`
 
 ## Contributing
 
