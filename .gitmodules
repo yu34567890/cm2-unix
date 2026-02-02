@@ -1,0 +1,3 @@
+[submodule "emulator/arch/riscv/cm2-riscv-emulator"]
+	path = emulator/arch/riscv/cm2-riscv-emulator
+	url = https://github.com/Qxtdl/cm2-riscv-emulator.git
