@@ -89,6 +89,12 @@ void exit()
     proc_delete(current_process);
 }
 
+//int waitpid(pid_t pid)
+void waitpid()
+{
+    
+}
+
 void syscall_update()
 {
     struct proc* current = &process_table[0];
@@ -108,7 +114,9 @@ void process_syscall()
 {
     
     uint32_t syscallno = syscall_args[0];
+    
     if (syscallno < SYSCALL_COUNT) {
+        current_process->syscall_operation = syscallno;
         syscall_setup_table[syscallno]();
     } else {
         //bad syscall
