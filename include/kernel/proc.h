@@ -4,8 +4,17 @@
 
 enum proc_state : uint8_t {
     BLOCKED,
-    READY
+    READY,
+    DEAD
 };
+
+typedef struct {
+    struct device_request* req;
+} dev_write_t;
+
+typedef struct {
+    uint8_t target_pid;
+} waitpid_t;
 
 #define SYSCALL_STATE_NIL 255
 #define SYSCALL_STATE_BEGIN 0
@@ -21,7 +30,10 @@ struct proc {
     uint8_t syscall_state;
     uint8_t syscall_operation;
     uint8_t pid;
-    struct device_request* dev_req;
+    union {
+        dev_write_t dev_write_state;
+        waitpid_t waitpid_state;
+    };
 };
 
 #define MAX_PROCESSES 4

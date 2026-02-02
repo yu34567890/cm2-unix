@@ -79,8 +79,9 @@ struct proc* proc_create(uint32_t entry_point, uint32_t stack_pointer) {
 }
 
 void proc_delete(struct proc* process) {
-    process->state = BLOCKED;
-    free_processes[free_processes_count++] = process->pid;
+    if (process->state != DEAD) {
+        free_processes[free_processes_count++] = process->pid;
+    }
 }
 
 void proc_update()
@@ -90,6 +91,9 @@ void proc_update()
     //if the current process is ready we queue it up for execution
     if (process->state == READY && process != NULL) {
         proc_enqueue(process);
+    }
+    if (process->state == DEAD && process != NULL) {
+        proc_delete(process);
     }
 
     if (free_processes_count == MAX_PROCESSES) {
