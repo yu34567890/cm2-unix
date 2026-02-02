@@ -14,7 +14,7 @@ void panic(void) {
     
     freestanding_tty_puts("KERNEL PANIC:\nSP $");
     freestanding_tty_puts(u32_to_hex(sp));
-    freestanding_tty_puts("PROC:\nPID: $");
+    freestanding_tty_puts("\nPROC:\nPID: $");
     freestanding_tty_puts(u32_to_hex(current_process->pid));
     freestanding_tty_puts("\nSYSCALL: $");
     freestanding_tty_puts(u32_to_hex(current_process->syscall_operation));
