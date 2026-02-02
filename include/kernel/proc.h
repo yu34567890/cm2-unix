@@ -5,7 +5,8 @@
 enum proc_state : uint8_t {
     BLOCKED,
     READY,
-    DEAD
+    DEAD,
+    UNALLOCATED
 };
 
 typedef struct {

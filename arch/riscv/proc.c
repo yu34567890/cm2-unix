@@ -79,8 +79,11 @@ struct proc* proc_create(uint32_t entry_point, uint32_t stack_pointer) {
 }
 
 void proc_delete(struct proc* process) {
-    if (process->state != DEAD) {
+    if (process->state == DEAD) {
+        process->state = UNALLOCATED;
         free_processes[free_processes_count++] = process->pid;
+    } else if (process->state == UNALLOCATED) {
+        panic();
     }
 }
 
@@ -96,7 +99,7 @@ void proc_update()
         proc_delete(process);
     }
 
-    if (free_processes_count == MAX_PROCESSES) {
+    if (free_processes_count == MAX_PROCESSES) { //out of processes
         panic();
     }
 
