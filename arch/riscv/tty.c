@@ -141,7 +141,7 @@ static inline uint8_t tty_read(
     if (tty_interface->input_ready) {
         char c = tty_interface->input_character;
         
-        if (c == '\r') {
+        if (c == '\r' || c == '\n') {
             tty_interface->cursor_location = (tty_interface->cursor_location + 32) & 0b11100000;
             return 1;
         }
