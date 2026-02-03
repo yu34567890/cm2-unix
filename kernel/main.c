@@ -7,6 +7,9 @@
 #include <kernel/syscall.h>
 #include <lib/stdlib.h>
 
+#include <fs/romfs.h>
+#include <lib/hex.h>
+
 dev_t tty0_devno;
 struct device* tty0;
 
@@ -14,6 +17,8 @@ dev_t disk0_devno;
 
 dev_t gpu0_devno;
 struct device* gpu0;
+
+struct superblock* romfs;
 
 [[gnu::aligned(16)]] uint8_t init_thread_stack[64];
 
@@ -34,6 +39,15 @@ void init_thread() {
 
     syscall(DEV_WRITE, tty0_devno, (uint32_t) test1, strnlen(test1, 32));
 
+    romfs = romfs_sops.mount(NULL, NULL);
+
+    int fd = syscall(OPEN, (uint32_t) "yeet", 0, 0);
+    char buff[16];
+    
+    syscall(READ, fd, (uint32_t) &buff, 16);
+
+    syscall(DEV_WRITE, tty0_devno, (uint32_t) &buff, 16);
+
     syscall(EXIT, 0, 0, 0); //exit(0)
 }
 
@@ -51,7 +65,7 @@ struct tilegpu_ioctl_msg_drawtile tile = {
 
 void test_thread() {
     //waitpid(3);
-    syscall(WAITPID, 3, 0, 0);
+    syscall(WAITPID, 3, 0, 0); 
 
     //dev_write(tty0_devno, &test, sizeof(test)-1);
     syscall(DEV_WRITE, tty0_devno, (uint32_t) &shell_name, sizeof(shell_name) - 1);
