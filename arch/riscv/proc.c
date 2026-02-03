@@ -68,7 +68,7 @@ struct proc* proc_create(uint32_t entry_point, uint32_t stack_pointer) {
     free_processes_count = tmp;
 
     new_process->pid = index;
-    new_process->return_adres = entry_point;
+    new_process->return_address = entry_point;
     new_process->user_sp = stack_pointer;
     new_process->state = READY;
     new_process->return_value = 0;
@@ -106,9 +106,10 @@ void proc_update()
     while(new_process == NULL) {
         device_update(); //do a kernel 'tick' basicly call all update functions
         syscall_update();
-
         new_process = proc_dequeue();
     }
+
     current_process = new_process;
+    
 }
 

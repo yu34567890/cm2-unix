@@ -23,7 +23,7 @@ typedef struct {
 #define SYSCALL_STATE_BEGIN 0
 //this should be made cross platform but i dont care anymore
 struct proc {
-    uint32_t return_adres;
+    uint32_t return_address;
     uint32_t user_sp;
     uint32_t saved_regs[12];
     uint32_t return_value;
