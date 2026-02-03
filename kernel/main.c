@@ -1,12 +1,11 @@
 #include <kernel/device.h>
 #include <kernel/tty.h>
 #include <kernel/block.h>
+#include <kernel/tilegpu.h>
 #include <kernel/majors.h>
 #include <kernel/proc.h>
 #include <kernel/syscall.h>
 #include <lib/stdlib.h>
-
-#include <kernel/tilegpu.h>
 
 dev_t tty0_devno;
 struct device* tty0;
@@ -26,8 +25,8 @@ void init_thread() {
 
 
     
-    // const char *tilegpu_print = "tilegpu\ntest";
-    // syscall(DEV_WRITE, gpu0_devno, (uint32_t) tilegpu_print, strnlen(tilegpu_print, 32));
+    //const char *tilegpu_print = "tilegpu\ntest";
+    //syscall(DEV_WRITE, gpu0_devno, (uint32_t) tilegpu_print, strnlen(tilegpu_print, 32));
 
     syscall(DEV_WRITE, tty0_devno, (uint32_t) test, strnlen(test, 32));
     
@@ -43,10 +42,16 @@ char shell_name[] = "Shell v0.1.1\n";
 char prompt[] = "# ";
 char uname[] = "CM2-UNIX V0.2.3\nbuild: " __DATE__ "\n";
 char bad_command[] = "-shell: bad cmd\n";
+struct tilegpu_ioctl_msg_drawtile tile = {
+        .tile_id = 'a',
+        .x = 0,
+        .y = 0,
+        .controls = TILEGPU_DRAW
+    };
 
 void test_thread() {
     //waitpid(3);
-    syscall(5, 3, 0, 0);
+    syscall(WAITPID, 3, 0, 0);
 
     //dev_write(tty0_devno, &test, sizeof(test)-1);
     syscall(DEV_WRITE, tty0_devno, (uint32_t) &shell_name, sizeof(shell_name) - 1);
@@ -65,8 +70,7 @@ void test_thread() {
         } else if (strncmp(buffer, "clear", size) == 0) {
             syscall(DEV_IOCTL, tty0_devno, TTY_IOCTL_CLEAR, 0);
         } else if (strncmp(buffer, "tilegpu", size) == 0) {
-            syscall(DEV_IOCTL, gpu0_devno, TILEGPU_IOCTL_DRAWTILE, (uint32_t) &(struct tilegpu_ioctl_msg_drawtile){'a', 0, 0, TILEGPU_DRAW});
-            syscall(DEV_IOCTL, gpu0_devno, TILEGPU_IOCTL_DRAWTILE, (uint32_t) &(struct tilegpu_ioctl_msg_drawtile){'b', 2, 2, TILEGPU_DRAW});
+            syscall(DEV_IOCTL, gpu0_devno, TILEGPU_IOCTL_DRAWTILE, (uint32_t) &tile);
         } else {
             syscall(DEV_WRITE, tty0_devno, (uint32_t) &bad_command, sizeof(bad_command) - 1);
         }
@@ -87,7 +91,7 @@ void main() {
     proc_init();
 
     tty0 = device_create(&tty0_devno, TTY_MAJOR, (void*) 0xFFF1);
-    gpu0 = device_create(&gpu0_devno, TILEGPU_MAJOR, (void *) 0xFFF9);
+    gpu0 = device_create(&gpu0_devno, TILEGPU_MAJOR, (void*) 0xFFF8);
 
     proc_create((uint32_t) &init_thread, (uint32_t) &init_thread_stack + 64);
     proc_create((uint32_t) &test_thread, (uint32_t) &test_thread_stack + 128);
