@@ -18,9 +18,16 @@ typedef struct {
     uint8_t target_pid;
 } waitpid_t;
 
+typedef struct {
+    path_walk_t walker;
+} vfs_open_t;
+
+
 
 #define SYSCALL_STATE_NIL 255
 #define SYSCALL_STATE_BEGIN 0
+
+#define PROC_MAXFILES 16
 //this should be made cross platform but i dont care anymore
 struct proc {
     uint32_t return_address;
@@ -33,6 +40,9 @@ struct proc {
     uint8_t syscall_state;
     uint8_t syscall_operation;
     uint8_t pid;
+    
+    //per process file descript table
+    uint8_t open_files[PROC_MAXFILES];
 
     //this is the state that multi tick syscalls need
     union {
@@ -54,7 +64,8 @@ int proc_enqueue(struct proc* process);
 struct proc* proc_dequeue();
 void proc_init();
 struct proc* proc_create(uint32_t entry_point, uint32_t stack_pointer);
-void proc_delete(struct proc* process); 
+void proc_delete(struct proc* process);
+void proc_resume(struct proc* process, int return_value);
 void proc_update();
 
 

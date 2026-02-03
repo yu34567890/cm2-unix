@@ -85,6 +85,14 @@ void proc_delete(struct proc* process) {
     }
 }
 
+void proc_resume(struct proc* process, int return_value)
+{
+    process->state = READY;
+    process->return_value = return_value;
+    proc_enqueue(process);
+    process->syscall_state = SYSCALL_STATE_NIL;
+}
+
 void proc_update()
 {
     struct proc* process = current_process;
