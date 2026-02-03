@@ -3,6 +3,7 @@
 
 extern uint32_t syscall_args[4];
 
+
 void dev_write();
 void dev_write_update(struct proc* process);
 void dev_read();
@@ -12,6 +13,11 @@ void yield();
 void exit();
 void waitpid();
 void waitpid_update(struct proc* process);
+void vfs_open();
+void vfs_open_update(struct proc* process);
+
+
+
 
 //called from a thread, switches to kernel context
 int syscall(uint32_t a, uint32_t b, uint32_t c, uint32_t d);

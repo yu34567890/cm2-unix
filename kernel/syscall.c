@@ -1,11 +1,12 @@
 #include <kernel/syscall.h>
 #include <kernel/device.h>
 #include <kernel/panic.h>
+#include <fs/vfs.h>
 #include <stddef.h>
 
 uint32_t syscall_args[4]; //arguments registers, we only need a0 to a3 right now
 
-#define SYSCALL_COUNT 6
+#define SYSCALL_COUNT 7
 
 void (*syscall_setup_table[])() = {
     &dev_write,
@@ -13,7 +14,8 @@ void (*syscall_setup_table[])() = {
     &dev_ioctl,
     &yield,
     &exit,
-    &waitpid
+    &waitpid,
+    &vfs_open
 };
 
 void (*syscall_update_table[])(struct proc* process) = {
@@ -22,8 +24,10 @@ void (*syscall_update_table[])(struct proc* process) = {
     NULL,
     NULL,
     NULL,
-    &waitpid_update
+    &waitpid_update,
+    &vfs_open_update
 };
+
 
 //syscall from user process
 
@@ -112,6 +116,42 @@ void waitpid_update(struct proc* process)
         process->syscall_state = SYSCALL_STATE_NIL;
     }
 }
+
+
+void vfs_open()
+{
+    struct proc* process = current_process;
+    walk_path_init(&process->open_state.walker, (const char*) syscall_args[1]);
+    process->open_state.walker.fs_state.fs = NULL;
+    
+    //block the process
+    process->state = BLOCKED;
+    process->syscall_state = SYSCALL_STATE_BEGIN;
+}
+
+void vfs_open_update(struct proc* process)
+{
+    uint8_t rt = walk_path(&process->open_state.walker);
+    if (rt == 2) { //directory not found
+        proc_resume(process, -1);
+    } else if (rt == 1) { //we walked the entire path
+        
+        uint8_t new_fd = fd_alloc();
+        struct fd* fd_p = &fd_table[new_fd];
+        fd_p->file = process->open_state.walker.fs_state.dir;
+        fd_p->flags = 0;
+        fd_p->offset = 0;
+        
+        process->open_files[0] = new_fd;
+
+        proc_resume(process, 0);
+    }
+}
+
+
+
+
+
 
 void syscall_update()
 {
