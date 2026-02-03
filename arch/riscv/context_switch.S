@@ -54,7 +54,7 @@ exit_kernel:
 
     lw ra, 0(t0)
     lw sp, 4(t0)
-    
+
     lw s0, 8(t0)
     lw s1, 12(t0)
     lw s2, 16(t0)
@@ -67,6 +67,9 @@ exit_kernel:
     lw s9, 44(t0)
     lw s10, 48(t0)
     lw s11, 52(t0)
+
+    #load return value
+    lw a0, 56(t0)
     
     # return to the user
     ret
