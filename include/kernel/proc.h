@@ -22,6 +22,9 @@ typedef struct {
     path_walk_t walker;
 } vfs_open_t;
 
+typedef struct {
+    fs_read_t fs;
+} vfs_read_t;
 
 
 #define SYSCALL_STATE_NIL 255
@@ -49,6 +52,7 @@ struct proc {
         dev_write_t dev_write_state;
         waitpid_t waitpid_state;
         vfs_open_t open_state;
+        vfs_read_t read_state;
     };
 };
 
