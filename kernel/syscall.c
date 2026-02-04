@@ -137,7 +137,7 @@ void vfs_open()
 void vfs_open_update(struct proc* process)
 {
     uint8_t rt = walk_path(&process->open_state.walker);
-    if (rt == 2) { //directory not found
+    if (rt < 0) { //directory not found
         proc_resume(process, -1);
     } else if (rt == 1) { //we walked the entire path
         uint8_t new_fd = fd_alloc();
@@ -170,6 +170,7 @@ void vfs_read()
 void vfs_read_update(struct proc* process)
 {
     int8_t rt = process->read_state.fs.fs->fops->read(&process->read_state.fs);
+    
     if (rt != 0) {
         proc_resume(process, process->read_state.fs.bytes_read);
     }

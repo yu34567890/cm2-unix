@@ -62,6 +62,7 @@ int8_t romfs_read(fs_read_t* state)
     state->bytes_read = ++i;
 
     if (i == state->count || i == file->length) {
+        debug('A');
         return 1;
     }
     return 0;

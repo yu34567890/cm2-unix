@@ -20,7 +20,7 @@ struct device* gpu0;
 
 struct superblock* romfs;
 
-[[gnu::aligned(16)]] uint8_t init_thread_stack[64];
+[[gnu::aligned(16)]] uint8_t init_thread_stack[128];
 
 
 void init_thread() {
@@ -76,7 +76,7 @@ void test_thread() {
         syscall(DEV_WRITE, tty0_devno, (uint32_t) &prompt, sizeof(prompt) - 1);
         //read input
         int size = syscall(DEV_READ, tty0_devno, (uint32_t) &buffer, sizeof(buffer));
-
+        
         if (strncmp(buffer, "uname", size) == 0) {
             syscall(DEV_WRITE, tty0_devno, (uint32_t) &uname, sizeof(uname) - 1);
         } else if (strncmp(buffer, "exit", size) == 0) {
@@ -107,7 +107,7 @@ void main() {
     tty0 = device_create(&tty0_devno, TTY_MAJOR, (void*) 0xFFF1);
     gpu0 = device_create(&gpu0_devno, TILEGPU_MAJOR, (void*) 0xFFF8);
 
-    proc_create((uint32_t) &init_thread, (uint32_t) &init_thread_stack + 64);
+    proc_create((uint32_t) &init_thread, (uint32_t) &init_thread_stack + 128);
     proc_create((uint32_t) &test_thread, (uint32_t) &test_thread_stack + 128);
 
     //bootstrap the scheduler by getting the first process to run

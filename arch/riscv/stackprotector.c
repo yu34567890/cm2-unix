@@ -2,8 +2,9 @@
 
 #include <kernel/panic.h>
 
-uint32_t __stack_chk_guard = 0xDEADC0DE;
+volatile uint32_t __stack_chk_guard = 0xDEADC0DE;
 
+[[gnu::used]]
 void __stack_chk_fail(void) {
     // uint32_t sp_value = 0;
 
@@ -19,5 +20,4 @@ void __stack_chk_fail(void) {
     *((uint8_t *)0xFFF7) = 0xFF; // FCAUSE = STACK CORRUPTED
 
     panic();
-    while (1);
 }

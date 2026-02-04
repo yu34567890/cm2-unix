@@ -6,14 +6,14 @@
 #include <stdint.h>
 
 void panic(void) {
-    uint32_t pc;
+    uint32_t sp;
     __asm__ volatile (
-        "auipc %0, 0"
-        : "=r" (pc)
+        "mv %0, sp"
+        : "=r" (sp)
     );
     
-    freestanding_tty_puts("KERNEL PANIC:\nPC $");
-    freestanding_tty_puts(u32_to_hex(pc));
+    freestanding_tty_puts("KERNEL PANIC:\nSP $");
+    freestanding_tty_puts(u32_to_hex(sp));
     freestanding_tty_puts("\nPID: $");
     freestanding_tty_puts(u32_to_hex(current_process->pid));
     freestanding_tty_puts("\nSYSCALL: $");
