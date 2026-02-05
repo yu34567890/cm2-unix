@@ -7,13 +7,32 @@ struct superblock;
 struct fd;
 struct dentry;
 
-#define FS_INAME_LEN 8
+typedef uint32_t inum_t; //this is a unique identifier for an inode, this would be like the cluster + offset in fat
+
+#define FS_INAME_LEN 10
 #define FS_PATH_LEN (FS_INAME_LEN*4)
+#define FS_MODE_DIR 1
+#define FS_MODE_FILE 2
+#define FS_MODE_MOUNT 3
+
+#define INODE_TABLE_SIZE 32
+
+struct romfs_inode {
+    void* data;
+    uint32_t length;
+};
+
+
 struct inode {
     struct superblock* fs; //this is the filesystem that the inode is part of
     char name[FS_INAME_LEN]; //the name of the file
     uint8_t refcount; //the amount of references exist to this inode, this includes file descriptors and dentries
     uint8_t mode; //currently only stores filetype, but i will later expand it will actual permissions and ownership
+    inum_t dir; //the parent directory of this inode
+    inum_t file; //the inum of this inode
+    union {
+        struct romfs_inode romfs;
+    };
 };
 
 struct stat {
@@ -78,5 +97,20 @@ struct fd {
     uint32_t offset : 24;
     uint8_t flags : 8;
 };
+
+#define MAX_FILESYSTEM_COUNT 4
+#define FS_NAME_LEN 4
+#define MAX_FD 32
+extern struct fd fd_table[MAX_FD];
+
+
+void fs_init();
+struct inode* create_inode();
+void free_inode(struct inode* i);
+int8_t lookup_dir(fs_lookup_t* state);
+void register_filesystem(const char* name, struct super_ops* fs);
+struct super_ops* lookup_filesystem(const char* name);
+int fd_alloc();
+
 
 
