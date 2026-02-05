@@ -6,8 +6,6 @@
 
 uint32_t syscall_args[4]; //arguments registers, we only need a0 to a3 right now
 
-#define SYSCALL_COUNT 8
-
 void (*syscall_setup_table[])() = {
     &dev_write,
     &dev_read,
@@ -29,6 +27,8 @@ void (*syscall_update_table[])(struct proc* process) = {
     &vfs_open_update,
     &vfs_read_update
 };
+
+#define SYSCALL_COUNT sizeof(syscall_setup_table)/sizeof(void*)
 
 
 //syscall from user process
