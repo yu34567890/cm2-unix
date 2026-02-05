@@ -69,7 +69,10 @@ void test_thread() {
         syscall(DEV_WRITE, tty0_devno, (uint32_t) &prompt, sizeof(prompt) - 1);
         //read input
         int size = syscall(DEV_READ, tty0_devno, (uint32_t) &buffer, sizeof(buffer));
-        
+        if (size == 0) {
+            continue;
+        }
+
         if (strncmp(buffer, "uname", size) == 0) {
             syscall(DEV_WRITE, tty0_devno, (uint32_t) &uname, sizeof(uname) - 1);
         } else if (strncmp(buffer, "exit", size) == 0) {
