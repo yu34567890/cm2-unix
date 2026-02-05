@@ -94,6 +94,32 @@ void proc_resume(struct proc* process, int return_value)
     process->syscall_state = SYSCALL_STATE_NIL;
 }
 
+
+struct fd* proc_get_fd(int fd) {
+    if (fd < 0 || fd > MAX_FD) {
+        return NULL;
+    }
+    uint8_t fdnum = current_process->open_files[fd];
+    if (fdnum > PROC_MAXFILES) {
+        return NULL;
+    }
+    struct fd* descriptor = &fd_table[fdnum];
+
+    return descriptor;
+}
+
+uint8_t proc_alloc_fd() {
+    for (int i = 0; i < PROC_MAXFILES; i++) {
+        if (current_process->open_files[i] == PROC_FILE_NIL) {
+            return i;
+        }
+    }
+    return PROC_FILE_NIL;
+}
+
+
+
+
 void proc_update()
 {
     struct proc* process = current_process;

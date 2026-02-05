@@ -31,6 +31,7 @@ typedef struct {
 #define SYSCALL_STATE_BEGIN 0
 
 #define PROC_MAXFILES 16
+#define PROC_FILE_NIL 255
 //this should be made cross platform but i dont care anymore
 struct proc {
     uint32_t return_address;
@@ -70,6 +71,8 @@ void proc_init();
 struct proc* proc_create(uint32_t entry_point, uint32_t stack_pointer);
 void proc_delete(struct proc* process);
 void proc_resume(struct proc* process, int return_value);
+struct fd* proc_get_fd(int fd);
+uint8_t proc_alloc_fd();
 void proc_update();
 
 
