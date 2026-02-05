@@ -135,7 +135,7 @@ void vfs_open()
 
 void vfs_open_update(struct proc* process)
 {
-    uint8_t rt = walk_path(&process->open_state.walker);
+    int8_t rt = walk_path(&process->open_state.walker);
     if (rt < 0) { //directory not found
         proc_resume(process, -1);
     } else if (rt == 1) { //we walked the entire path
@@ -150,6 +150,8 @@ void vfs_open_update(struct proc* process)
     }
 }
 
+#include <kernel/tty.h>
+#include <lib/hex.h>
 //int write(int fd, void* buffer, uint32_t count)
 void vfs_read()
 {
@@ -162,7 +164,7 @@ void vfs_read()
     process->read_state.fs.bytes_read = 0;
     process->read_state.fs.fs = descriptor->file->fs;
     process->read_state.fs.req = NULL;
-
+    
     process->state = BLOCKED;
     process->syscall_state = SYSCALL_STATE_BEGIN;
 }
