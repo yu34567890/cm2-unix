@@ -56,6 +56,7 @@ void proc_init()
 
     for (int i = 0; i < MAX_PROCESSES; i++) {
         free_processes[i] = i;
+        process_table[i].state = UNALLOCATED;
     }
 }
 
