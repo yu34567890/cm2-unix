@@ -18,11 +18,12 @@ void walk_path_init(path_walk_t* state, const char* path)
 int8_t walk_path(path_walk_t* state)
 {
     if (*state->path_ptr == '\0') {
-        uint8_t stat = lookup_dir(&state->fs_state);
+        int8_t stat = lookup_dir(&state->fs_state);
         if (stat != 0) {
             return stat;
         }
     }
+    debug('C');
     
     uint8_t stat = 1;
     
