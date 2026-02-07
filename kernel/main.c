@@ -30,27 +30,18 @@ void init_thread() {
     //syscall(DEV_WRITE, gpu0_devno, (uint32_t) tilegpu_print, strnlen(tilegpu_print, 32));
 
     syscall(DEV_WRITE, tty0_devno, (uint32_t) test, strnlen(test, 32));
-    
-    // test the open and read syscalls
-    int fd = syscall(OPEN, (uint32_t) "yeet.txt", 0, 0);
-    if (fd == -1) {
-        syscall(DEV_WRITE, tty0_devno, (uint32_t) "\nerror\n", 7);
-    }
-    char buff[16];
-    
-    syscall(READ, fd, (uint32_t) &buff, 16);
 
-    syscall(DEV_WRITE, tty0_devno, (uint32_t) &buff, 16);
-    
 
     syscall(EXIT, 0, 0, 0); //exit(0)
 }
 
 [[gnu::aligned(16)]] uint8_t test_thread_stack[128];
-char shell_name[] = "Shell v0.1.1\n";
-char prompt[] = "# ";
-char uname[] = "CM2-UNIX V0.2.3\nbuild: " __DATE__ "\n";
-char bad_command[] = "-shell: bad cmd\n";
+const char shell_name[] = "Shell v0.1.1\n";
+const char prompt[] = "# ";
+const char uname[] = "CM2-UNIX V0.2.3\nbuild: " __DATE__ "\n";
+const char bad_command[] = "-shell: bad cmd\n";
+const char ls_ftypes[] = " dfm";
+
 struct tilegpu_ioctl_msg_drawtile tile = {
         .tile_id = 'a',
         .x = 0,
@@ -83,6 +74,23 @@ void test_thread() {
             syscall(DEV_IOCTL, tty0_devno, TTY_IOCTL_CLEAR, 0);
         } else if (strncmp(buffer, "tilegpu", size) == 0) {
             syscall(DEV_WRITE, gpu0_devno, (uint32_t) "Hello", 5);
+        } else if (strncmp(buffer, "ls", size) == 0) {
+            
+            int fd = syscall(OPEN, (uint32_t) "/", 0, 0);
+            
+            struct stat dir_buff[2];
+
+            int entry_count = syscall(READDIR, fd, (uint32_t) &dir_buff, 2);
+            syscall(DEV_WRITE, tty0_devno, (uint32_t) "Directories:\n", 13);
+            for (int i = 0; i < entry_count; i++) {
+                struct stat* entry = &dir_buff[i];
+
+                char buff[] = "x           \n";
+                buff[0] = ls_ftypes[entry->mode];
+                strncpy(buff + 2, entry->name, FS_INAME_LEN);
+                syscall(DEV_WRITE, tty0_devno, (uint32_t) buff, sizeof(buff) - 1);
+            }
+
         } else {
             syscall(DEV_WRITE, tty0_devno, (uint32_t) &bad_command, sizeof(bad_command) - 1);
         }
