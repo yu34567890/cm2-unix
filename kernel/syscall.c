@@ -14,7 +14,8 @@ void (*syscall_setup_table[])() = {
     &exit,
     &waitpid,
     &vfs_open,
-    &vfs_read
+    &vfs_read,
+    &vfs_readdir
 };
 
 void (*syscall_update_table[])(struct proc* process) = {
@@ -25,7 +26,8 @@ void (*syscall_update_table[])(struct proc* process) = {
     NULL,
     &waitpid_update,
     &vfs_open_update,
-    &vfs_read_update
+    &vfs_read_update,
+    &vfs_readdir_update
 };
 
 #define SYSCALL_COUNT sizeof(syscall_setup_table)/sizeof(void*)
@@ -154,8 +156,7 @@ void vfs_open_update(struct proc* process)
     }
 }
 
-//BUG: there is a stack corruption bug in here, specifically when reading from romfs
-//int write(int fd, void* buffer, uint32_t count)
+//int read(int fd, void* buffer, uint32_t count)
 void vfs_read()
 {
     struct proc* process = current_process;
@@ -185,6 +186,39 @@ void vfs_read_update(struct proc* process)
 
 }
 
+void vfs_readdir()
+{
+    struct proc* process = current_process;
+    struct fd* descriptor = proc_get_fd(syscall_args[1]);
+    if (descriptor == NULL) {
+        process->return_value = -1;
+        return;
+    }
+    process->read_state.fs.descriptor = descriptor;
+    process->read_state.fs.buffer = (void*) syscall_args[2];
+    process->read_state.fs.count = syscall_args[3];
+    process->read_state.fs.bytes_read = 0;
+    process->read_state.fs.fs = descriptor->file->fs;
+    process->read_state.fs.req = NULL;
+    
+    process->state = BLOCKED;
+    process->syscall_state = SYSCALL_STATE_BEGIN;
+}
+
+void vfs_readdir_update(struct proc* process)
+{
+    int8_t (*readdir)(fs_read_t* state) = process->read_state.fs.fs->fops->readdir;
+    if (readdir == NULL) {
+        proc_resume(process, 0);
+        return;
+    }
+
+    int8_t rt = readdir(&process->read_state.fs);
+
+    if (rt != 0) {
+        proc_resume(process, process->read_state.fs.bytes_read);
+    }
+}
 
 void syscall_update()
 {

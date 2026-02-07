@@ -11,6 +11,7 @@ extern uint32_t syscall_args[4];
 #define WAITPID 5
 #define OPEN 6
 #define READ 7
+#define READDIR 8
 
 void dev_write();
 void dev_write_update(struct proc* process);
@@ -25,7 +26,8 @@ void vfs_open();
 void vfs_open_update(struct proc* process);
 void vfs_read();
 void vfs_read_update(struct proc* process);
-
+void vfs_readdir();
+void vfs_readdir_update(struct proc* process);
 
 
 //called from a thread, switches to kernel context
