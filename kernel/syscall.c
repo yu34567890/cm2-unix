@@ -2,6 +2,7 @@
 #include <kernel/device.h>
 #include <kernel/panic.h>
 #include <fs/vfs.h>
+#include <lib/kprint.h>
 #include <stddef.h>
 
 uint32_t syscall_args[4]; //arguments registers, we only need a0 to a3 right now
@@ -9,13 +10,14 @@ uint32_t syscall_args[4]; //arguments registers, we only need a0 to a3 right now
 void (*syscall_setup_table[])() = {
     &dev_write,
     &dev_read,
-    &dev_ioctl,
+    &ioctl,
     &yield,
     &exit,
     &waitpid,
     &vfs_open,
     &vfs_read,
-    &vfs_readdir
+    &vfs_readdir,
+    &vfs_write
 };
 
 void (*syscall_update_table[])(struct proc* process) = {
@@ -27,7 +29,8 @@ void (*syscall_update_table[])(struct proc* process) = {
     &waitpid_update,
     &vfs_open_update,
     &vfs_read_update,
-    &vfs_readdir_update
+    &vfs_readdir_update,
+    &vfs_write_update
 };
 
 #define SYSCALL_COUNT sizeof(syscall_setup_table)/sizeof(void*)
@@ -82,9 +85,11 @@ void dev_read_update(struct proc* process)
     }
 }
 
-//int dev_ioctl(dev_t devno, int cmd, void* arg)
-void dev_ioctl() {
-    struct device* dev = device_lookup(syscall_args[1]);
+//int ioctl(int fd, int cmd, void* arg)
+void ioctl() {
+    struct fd* descriptor = proc_get_fd(syscall_args[1]);
+    
+    struct device* dev = device_lookup(descriptor->file->devfs.devno);
     current_process->return_value = dev->ops->ioctl(dev, syscall_args[2], (void*) syscall_args[3]);
 }
 
@@ -151,8 +156,9 @@ void vfs_open_update(struct proc* process)
             proc_resume(process, -1);
             return;
         }
+        
         process->open_files[fdnum] = new_fd;
-        proc_resume(process, 0);
+        proc_resume(process, fdnum);
     }
 }
 
@@ -178,13 +184,50 @@ void vfs_read()
 
 void vfs_read_update(struct proc* process)
 {
-    int8_t rt = process->read_state.fs.fs->fops->read(&process->read_state.fs);
+    int8_t (*read)(fs_read_t* state) = process->read_state.fs.fs->fops->read;
+    if (read == NULL) {
+        proc_resume(process, -1);
+        return;
+    }
     
-    if (rt != 0) {
+    if (read(&process->read_state.fs) != 0) {
         proc_resume(process, process->read_state.fs.bytes_read);
     }
 
 }
+
+void vfs_write()
+{
+    struct proc* process = current_process;
+    struct fd* descriptor = proc_get_fd(syscall_args[1]);
+    if (descriptor == NULL) {
+        process->return_value = -1;
+        return;
+    }
+    process->write_state.fs.descriptor = descriptor;
+    process->write_state.fs.buffer = (void*) syscall_args[2];
+    process->write_state.fs.count = syscall_args[3];
+    process->write_state.fs.bytes_written = 0;
+    process->write_state.fs.fs = descriptor->file->fs;
+    process->write_state.fs.req = NULL;
+    
+    process->state = BLOCKED;
+    process->syscall_state = SYSCALL_STATE_BEGIN;
+}
+
+void vfs_write_update(struct proc* process)
+{
+    int8_t (*write)(fs_write_t* state) = process->write_state.fs.fs->fops->write;
+    if (write == NULL) {
+        proc_resume(process, -1);
+        return;
+    }
+    
+    if (write(&process->write_state.fs) != 0) {
+        proc_resume(process, process->write_state.fs.bytes_written);
+    }
+}
+
 
 void vfs_readdir()
 {
@@ -219,6 +262,8 @@ void vfs_readdir_update(struct proc* process)
         proc_resume(process, process->read_state.fs.bytes_read);
     }
 }
+
+
 
 void syscall_update()
 {
