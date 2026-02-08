@@ -1,3 +1,6 @@
+#include <lib/kprint.h>
+#include <lib/stdlib.h>
+
 #include <kernel/device.h>
 #include <kernel/tty.h>
 #include <kernel/block.h>
@@ -5,104 +8,16 @@
 #include <kernel/majors.h>
 #include <kernel/proc.h>
 #include <kernel/syscall.h>
-#include <lib/stdlib.h>
+#include <kernel/panic.h>
 
 #include <fs/romfs.h>
-#include <lib/hex.h>
+#include <fs/devfs.h>
 
-dev_t tty0_devno;
-struct device* tty0;
-
-dev_t disk0_devno;
-
-dev_t gpu0_devno;
-struct device* gpu0;
-
-struct superblock* romfs;
-
-[[gnu::aligned(16)]] uint8_t init_thread_stack[128];
-
-
-void init_thread() {
-    const char *test = "CM2-UNIX V0.3.0\nBooting...\n"; 
-    
-    //const char *tilegpu_print = "tilegpu\ntest";
-    //syscall(DEV_WRITE, gpu0_devno, (uint32_t) tilegpu_print, strnlen(tilegpu_print, 32));
-
-    syscall(DEV_WRITE, tty0_devno, (uint32_t) test, strnlen(test, 32));
-
-
-    syscall(EXIT, 0, 0, 0); //exit(0)
-}
-
-[[gnu::aligned(16)]] uint8_t test_thread_stack[128];
-const char shell_name[] = "Shell v0.1.2\n";
-const char prompt[] = "# ";
-const char uname[] = "CM2-UNIX V0.3.0\nbuild: " __DATE__ "\n";
-const char bad_command[] = "-shell: bad cmd\n";
-const char ls_ftypes[] = " dfm";
-
-struct tilegpu_ioctl_msg_drawtile tile = {
-        .tile_id = 'a',
-        .x = 0,
-        .y = 0,
-        .controls = TILEGPU_DRAW
-    };
-
-void test_thread() {
-    //waitpid(3);
-    syscall(WAITPID, 3, 0, 0); 
-
-    //dev_write(tty0_devno, &test, sizeof(test)-1);
-    syscall(DEV_WRITE, tty0_devno, (uint32_t) &shell_name, sizeof(shell_name) - 1);
-    
-    while(1) {
-        char buffer[16] = {0};
-        //write prompt
-        syscall(DEV_WRITE, tty0_devno, (uint32_t) &prompt, sizeof(prompt) - 1);
-        //read input
-        int size = syscall(DEV_READ, tty0_devno, (uint32_t) &buffer, sizeof(buffer));
-        if (size == 0) {
-            continue;
-        }
-
-        if (strncmp(buffer, "uname", size) == 0) {
-            syscall(DEV_WRITE, tty0_devno, (uint32_t) &uname, sizeof(uname) - 1);
-        } else if (strncmp(buffer, "exit", size) == 0) {
-            break;
-        } else if (strncmp(buffer, "clear", size) == 0) {
-            syscall(DEV_IOCTL, tty0_devno, TTY_IOCTL_CLEAR, 0);
-        } else if (strncmp(buffer, "tilegpu", size) == 0) {
-            syscall(DEV_WRITE, gpu0_devno, (uint32_t) "Hello", 5);
-        } else if (strncmp(buffer, "ls", size) == 0) {
-            
-            int fd = syscall(OPEN, (uint32_t) "/", 0, 0);
-            
-            struct stat dir_buff[2];
-
-            int entry_count = syscall(READDIR, fd, (uint32_t) &dir_buff, 2);
-            syscall(DEV_WRITE, tty0_devno, (uint32_t) "Directories:\n", 13);
-            for (int i = 0; i < entry_count; i++) {
-                struct stat* entry = &dir_buff[i];
-
-                char buff[] = "x           \n";
-                buff[0] = ls_ftypes[entry->mode];
-                strncpy(buff + 2, entry->name, FS_INAME_LEN);
-                syscall(DEV_WRITE, tty0_devno, (uint32_t) buff, sizeof(buff) - 1);
-            }
-
-        } else {
-            syscall(DEV_WRITE, tty0_devno, (uint32_t) &bad_command, sizeof(bad_command) - 1);
-        }
-    }
-
-    //exit(0)
-    syscall(EXIT, 0, 0, 0);
-}
+#include <kernel/kshell.h>
 
 void main() {
-    *((uint8_t*) 0xFFF6) = 0;
-    
+    dev_t tty0_devno, gpu0_devno, disk0_devno;
+
     //initialize functions
     device_init();
     tty_init();
@@ -111,8 +26,10 @@ void main() {
     proc_init();
     fs_init();
 
-    tty0 = device_create(&tty0_devno, TTY_MAJOR, (void*) 0xFFF1);
-    gpu0 = device_create(&gpu0_devno, TILEGPU_MAJOR, &(struct tilegpu_hw_interface){
+    kputs("CM2-UNIX v0.3.2\nBooting...\n");
+    
+    device_create(&tty0_devno, TTY_MAJOR, (void*) 0xFFF1);
+    device_create(&gpu0_devno, TILEGPU_MAJOR, &(struct tilegpu_hw_interface){
         .controls = TILEGPU_CONTROLS,
         .fx_imm = TILEGPU_FX_IMM,
         .fx_opcode = TILEGPU_FX_OPCODE,
@@ -121,13 +38,23 @@ void main() {
         .x = TILEGPU_X
     });
     device_create(&disk0_devno, GEN_DISK_MAJOR, (void*) 0xFFC3);
-
+    kputs("Registered devices\n");
 
     register_filesystem("romfs", (struct super_ops*) &romfs_sops);
-    mount_root("romfs", 255);
+    register_filesystem("devfs", (struct super_ops*) &devfs_sops);
 
-    proc_create((uint32_t) &init_thread, (uint32_t) &init_thread_stack + 128);
-    proc_create((uint32_t) &test_thread, (uint32_t) &test_thread_stack + 128);
+    mount_root("romfs", 255);
+    if (mount_devfs("devfs") < 0) {
+        panic("devfs mount failed");
+    }
+    kputs("mounted rootfs and devfs\n");
+
+    devfs_create_handle("tty0", tty0_devno);
+    devfs_create_handle("gpu0", gpu0_devno);
+    devfs_create_handle("disk0", disk0_devno);
+    kputs("populated devfs\n");
+
+    proc_create((uint32_t) &kshell_thread, (uint32_t) &kshell_thread_stack + KSHELL_STACK_SIZE);
 
     //bootstrap the scheduler by getting the first process to run
     current_process = proc_dequeue();
