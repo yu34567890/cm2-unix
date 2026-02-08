@@ -1,5 +1,6 @@
 #include <fs/romfs.h>
 #include <lib/stdlib.h>
+#include <lib/kprint.h>
 #include <kernel/panic.h>
 
 const struct super_ops romfs_sops = {
@@ -21,7 +22,9 @@ struct romfs_file bin_dir[1] = {
     }
 };
 
-struct romfs_file root_dir[2] = {
+struct romfs_file dev_dir[1];
+
+struct romfs_file root_dir[3] = {
     {
         .name = "yeet.txt",
         .length = 12,
@@ -33,6 +36,12 @@ struct romfs_file root_dir[2] = {
         .length = 1,
         .mode = FS_MODE_DIR,
         .data = bin_dir
+    },
+    {
+        .name = "dev",
+        .length = 0,
+        .mode = FS_MODE_DIR,
+        .data = dev_dir
     }
 };
 
@@ -40,7 +49,7 @@ static struct romfs_superblock romfs = {
     .base.sops = (struct super_ops*) &romfs_sops,
     .base.fops = (struct file_ops*) &romfs_fops,
     .root = &(struct romfs_file) {
-        .length = 2,
+        .length = 3,
         .data = root_dir
     }
 };
@@ -52,21 +61,17 @@ int8_t romfs_lookup(fs_lookup_t* state)
     uint16_t size;
     struct romfs_file* dir;
 
-    if (state->dir == NULL) {
-        dir = romfs.root->data;
-        size = romfs.root->length;
-    } else {
-        if (state->dir->mode == FS_MODE_FILE) {
-            return -1; //this is not a dir
-        }
-        dir = state->dir->romfs.data;
-        size = state->dir->romfs.length;
+    if (state->dir->mode == FS_MODE_FILE) {
+        return -1; //this is not a dir
     }
+
+    dir = state->dir->romfs.data;
+    size = state->dir->romfs.length;
     //empty name means return the root
     if (*state->fname == '\0') {
         struct inode* new = create_inode("");
-        new->dir = 0;
-        new->file = (uint32_t) dir;
+        new->dir = state->dir->file;
+        new->file = ROMFS_CREATE_INO(dir);
         new->fs = &romfs.base;
         new->mode = FS_MODE_DIR;
         new->romfs.length = size;
@@ -80,8 +85,8 @@ int8_t romfs_lookup(fs_lookup_t* state)
 
         if (strncmp(curr->name, state->fname, FS_INAME_LEN) == 0) {
             struct inode* new = create_inode(curr->name);
-            new->dir = (uint32_t) dir;
-            new->file = (uint32_t) curr->data;
+            new->dir = state->dir->file;
+            new->file = ROMFS_CREATE_INO(curr->data);
             new->fs = &romfs.base;
             new->mode = curr->mode;
             new->romfs.length = curr->length;
@@ -94,9 +99,14 @@ int8_t romfs_lookup(fs_lookup_t* state)
     return -1; //file not found
 }
 
-struct superblock* romfs_mount(struct device* dev, const char* args)
+int romfs_mount(struct inode* mountpoint, struct device* dev, const char* args)
 {
-    return &romfs.base;
+    mountpoint->fs = &romfs.base;
+    mountpoint->file = ROMFS_CREATE_INO(romfs.root->data);
+    mountpoint->mode = FS_MODE_MOUNT;
+    mountpoint->romfs.data = romfs.root->data;
+    mountpoint->romfs.length = romfs.root->length;
+    return 0;
 }
 
 //fuck gcc
@@ -121,10 +131,10 @@ __attribute__((optimize("O0"))) int8_t romfs_read(fs_read_t* state)
     return 0;
 }
 
-__attribute__((optimize("O0"))) int8_t romfs_readdir(fs_read_t* state)
+int8_t romfs_readdir(fs_read_t* state)
 {
     struct inode* dir = state->descriptor->file;
-    if (dir->mode == FS_MODE_FILE) {
+    if (dir->mode != FS_MODE_DIR) {
         return -1;
     }
 
@@ -138,7 +148,7 @@ __attribute__((optimize("O0"))) int8_t romfs_readdir(fs_read_t* state)
     dirent->time = 0;
     dirent->mode = file_entry->mode;
     dirent->size = file_entry->length;
-    dirent->d_ino = (uint32_t) file_entry->data;
+    dirent->d_ino = ROMFS_CREATE_INO(file_entry->data);
     strncpy(dirent->name, (char*) file_entry->name, FS_INAME_LEN);
     
     if (i == state->count) {
