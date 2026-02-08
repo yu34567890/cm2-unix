@@ -134,7 +134,7 @@ void proc_update()
     }
 
     if (free_processes_count == MAX_PROCESSES) { //out of processes
-        panic("free_processes_count == MAX_PROCESSES");
+        panic("out of processes");
     }
 
     //get a new process from the top of the queue
