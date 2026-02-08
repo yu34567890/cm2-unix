@@ -14,10 +14,13 @@ typedef struct {
     struct device* dev;
 } vfs_mount_t;
 
+extern struct inode rootfs;
+
 void walk_path_init(path_walk_t* state, const char* path);
 int8_t walk_path(path_walk_t* state);
 
 int mount_root(const char* fs_name, dev_t devno);
+int mount_devfs(const char* fs_name);
 int8_t mount_init(vfs_mount_t* state, const char* path, const char* fs_name, dev_t devno);
 int8_t mount_update(vfs_mount_t* state);
 void vfs_close(struct fd* decsriptor);
