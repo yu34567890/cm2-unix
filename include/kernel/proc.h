@@ -26,6 +26,9 @@ typedef struct {
     fs_read_t fs;
 } vfs_read_t;
 
+typedef struct {
+    fs_write_t fs;
+} vfs_write_t;
 
 #define SYSCALL_STATE_NIL 255
 #define SYSCALL_STATE_BEGIN 0
@@ -54,6 +57,7 @@ struct proc {
         waitpid_t waitpid_state;
         vfs_open_t open_state;
         vfs_read_t read_state;
+        vfs_write_t write_state;
     };
 };
 
