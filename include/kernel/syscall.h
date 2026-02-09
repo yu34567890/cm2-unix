@@ -3,36 +3,66 @@
 
 extern uint32_t syscall_args[4];
 
-#define DEV_WRITE 0
-#define DEV_READ 1
-#define IOCTL 2
-#define YIELD 3
-#define EXIT 4
-#define WAITPID 5
-#define OPEN 6
-#define READ 7
-#define READDIR 8
-#define WRITE 9
+enum Syscalls {
+    SYS_OPEN,
+    SYS_READ,
+    SYS_WRITE,
+    SYS_CLOSE,
+    SYS_IOCTL,
+    SYS_FSTAT,
+    SYS_READDIR,
+    SYS_GETCWD,
+    SYS_CHDIR,
+    SYS_YIELD,
+    SYS_EXEC,
+    SYS_EXIT,
+    SYS_KILL,
+    SYS_WAIT,
+    SYS_MOUNT,
+    SYS_SYSCTL
+};
 
-void dev_write();
-void dev_write_update(struct proc* process);
-void dev_read();
-void dev_read_update(struct proc* process);
-void ioctl();
-void yield();
-void exit();
-void waitpid();
-void waitpid_update(struct proc* process);
-void vfs_open();
-void vfs_open_update(struct proc* process);
-void vfs_read();
-void vfs_read_update(struct proc* process);
-void vfs_write();
-void vfs_write_update(struct proc* process);
-
-void vfs_readdir();
-void vfs_readdir_update(struct proc* process);
-
+//int open(const char* path, uint8_t flags)
+void sys_open();
+void sys_open_update(struct proc* process);
+//int read(int fd, void* buffer, int count)
+void sys_read();
+void sys_read_update(struct proc* process);
+//int write(int fd, void* buffer, int count)
+void sys_write();
+void sys_write_update(struct proc* process);
+//void close(int fd)
+void sys_close();
+//int ioctl(int fd, int cmd, void* arg)
+void sys_ioctl();
+//int fstat(int fd, struct stat* buff)
+void sys_fstat();
+//simplified by combining stat and dirent struct
+//int readdir(int fd, struct stat* buff, int count)
+void sys_readdir();
+void sys_readdir_update(struct proc* process);
+//int getcwd(char* buff, int size)
+void sys_getcwd();
+//int chdir(const char* path)
+void sys_chdir();
+void sys_chdir_update(struct proc* process);
+//void yield();
+void sys_yield();
+//pid_t exec(const char* path, const char* argv[])
+void sys_exec();
+void sys_exec_update(struct proc* process);
+//void exit(int error_code)
+void sys_exit();
+//int kill(pid_t upid)
+void sys_kill();
+//int wait(pid_t upid)
+void sys_wait();
+void sys_wait_update(struct proc* process);
+//int mount(const char* dev_name, char* dir_name, char* type, )
+void sys_mount();
+void sys_mount_update(struct proc* process);
+//int sysctl(int cmd, void* buff);
+void sys_sysctl();
 
 //called from a thread, switches to kernel context
 int syscall(uint32_t a, uint32_t b, uint32_t c, uint32_t d);

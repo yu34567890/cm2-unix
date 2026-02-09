@@ -35,6 +35,7 @@ typedef struct {
 
 #define PROC_MAXFILES 16
 #define PROC_FILE_NIL 255
+
 //this should be made cross platform but i dont care anymore
 struct proc {
     uint32_t return_address;
@@ -50,7 +51,8 @@ struct proc {
     
     //per process file descript table
     uint8_t open_files[PROC_MAXFILES];
-
+    
+    
     //this is the state that multi tick syscalls need
     union {
         dev_write_t dev_write_state;
@@ -61,6 +63,7 @@ struct proc {
     };
 };
 
+typedef uint8_t pid_t;
 #define MAX_PROCESSES 4
 #define MAX_PROCESSES_MSK (MAX_PROCESSES - 1)
 extern struct proc process_table[MAX_PROCESSES];

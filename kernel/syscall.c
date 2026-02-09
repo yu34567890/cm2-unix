@@ -1,135 +1,60 @@
+#include <kernel/globals.h>
 #include <kernel/syscall.h>
 #include <kernel/device.h>
 #include <kernel/panic.h>
+#include <kernel/proc.h>
 #include <fs/vfs.h>
 #include <lib/kprint.h>
+#include <lib/stdlib.h>
 #include <stddef.h>
+
 
 uint32_t syscall_args[4]; //arguments registers, we only need a0 to a3 right now
 
 void (*syscall_setup_table[])() = {
-    &dev_write,
-    &dev_read,
-    &ioctl,
-    &yield,
-    &exit,
-    &waitpid,
-    &vfs_open,
-    &vfs_read,
-    &vfs_readdir,
-    &vfs_write
+    &sys_open,
+    &sys_read,
+    &sys_write,
+    &sys_close,
+    &sys_ioctl,
+    &sys_fstat,
+    &sys_readdir,
+    &sys_getcwd,
+    &sys_chdir,
+    &sys_yield,
+    &sys_exec,
+    &sys_exit,
+    &sys_kill,
+    &sys_wait,
+    &sys_mount,
+    &sys_sysctl
 };
 
 void (*syscall_update_table[])(struct proc* process) = {
-    &dev_write_update,
-    &dev_read_update,
+    &sys_open_update,
+    &sys_read_update,
+    &sys_write_update,
     NULL,
     NULL,
     NULL,
-    &waitpid_update,
-    &vfs_open_update,
-    &vfs_read_update,
-    &vfs_readdir_update,
-    &vfs_write_update
+    &sys_readdir_update,
+    NULL,
+    &sys_chdir_update,
+    NULL,
+    &sys_exec_update,
+    NULL,
+    NULL,
+    &sys_wait_update,
+    &sys_mount_update,
+    NULL
 };
 
 #define SYSCALL_COUNT sizeof(syscall_setup_table)/sizeof(void*)
 
 //syscall from user process
 
-//int dev_write(dev_t devno, void* buffer, uint32_t count)
-void dev_write()
-{
-    struct proc* process = current_process;
-    process->dev_write_state.req = device_newreq((void*) syscall_args[2], syscall_args[3], 0, DEVICE_OP_WR);
-    
-    struct device* dev = device_lookup(syscall_args[1]);
-    device_queue_action(dev, process->dev_write_state.req);
-    
-    process->state = BLOCKED;
-    process->syscall_state = SYSCALL_STATE_BEGIN;
-}
-
-void dev_write_update(struct proc* process)
-{
-    if (process->dev_write_state.req->state == DEVICE_STATE_FINISHED) {
-        process->state = READY;
-        process->return_value = process->dev_write_state.req->count;
-        device_free_req(process->dev_write_state.req);
-        proc_enqueue(process); //allow the process to be executed again
-        process->syscall_state = SYSCALL_STATE_NIL;
-    }
-}
-
-//int dev_read(dev_t devno, void* buffer, uint32_t count)
-void dev_read()
-{
-    struct proc* process = current_process;
-    process->dev_write_state.req = device_newreq((void*) syscall_args[2], syscall_args[3], 0, DEVICE_OP_RD);
-    
-    struct device* dev = device_lookup(syscall_args[1]);
-    device_queue_action(dev, process->dev_write_state.req);
-    
-    process->state = BLOCKED;
-    process->syscall_state = SYSCALL_STATE_BEGIN;
-}
-
-void dev_read_update(struct proc* process)
-{
-    if (process->dev_write_state.req->state == DEVICE_STATE_FINISHED) {
-        process->state = READY;
-        process->return_value = process->dev_write_state.req->count;
-        device_free_req(process->dev_write_state.req);
-        proc_enqueue(process); //allow the process to be executed again
-        process->syscall_state = SYSCALL_STATE_NIL;
-    }
-}
-
-//int ioctl(int fd, int cmd, void* arg)
-void ioctl() {
-    struct fd* descriptor = proc_get_fd(syscall_args[1]);
-    
-    struct device* dev = device_lookup(descriptor->file->devfs.devno);
-    current_process->return_value = dev->ops->ioctl(dev, syscall_args[2], (void*) syscall_args[3]);
-}
-
-void yield()
-{
-    //yield does nothing lol
-}
-
-//void exit(int return_code)
-void exit()
-{
-    current_process->state = DEAD;
-    current_process->return_value = syscall_args[1];
-}
-
-//int waitpid(pid_t pid)
-void waitpid()
-{
-    current_process->state = BLOCKED;
-    current_process->waitpid_state.target_pid = syscall_args[1];
-    current_process->syscall_state = SYSCALL_STATE_BEGIN;
-}
-
-void waitpid_update(struct proc* process)
-{
-    struct proc* target_proc = &process_table[process->waitpid_state.target_pid];
-
-    if (target_proc->state == UNALLOCATED) {
-        process->state = READY;
-        process->return_value = target_proc->return_value;
-        proc_enqueue(process);
-        process->syscall_state = SYSCALL_STATE_NIL;
-    }
-}
-
-//hardcoded filesystem until i finish mount point resolution
-extern struct superblock* romfs;
-
 // int open(const char* path, uint8_t flags)
-void vfs_open()
+void sys_open()
 {
     struct proc* process = current_process;
     walk_path_init(&process->open_state.walker, (const char*) syscall_args[1]);
@@ -139,7 +64,7 @@ void vfs_open()
     process->syscall_state = SYSCALL_STATE_BEGIN;
 }
 
-void vfs_open_update(struct proc* process)
+void sys_open_update(struct proc* process)
 {
     int8_t rt = walk_path(&process->open_state.walker);
     if (rt < 0) { //directory not found
@@ -163,7 +88,7 @@ void vfs_open_update(struct proc* process)
 }
 
 //int read(int fd, void* buffer, uint32_t count)
-void vfs_read()
+void sys_read()
 {
     struct proc* process = current_process;
     struct fd* descriptor = proc_get_fd(syscall_args[1]);
@@ -182,7 +107,7 @@ void vfs_read()
     process->syscall_state = SYSCALL_STATE_BEGIN;
 }
 
-void vfs_read_update(struct proc* process)
+void sys_read_update(struct proc* process)
 {
     int8_t (*read)(fs_read_t* state) = process->read_state.fs.fs->fops->read;
     if (read == NULL) {
@@ -196,7 +121,7 @@ void vfs_read_update(struct proc* process)
 
 }
 
-void vfs_write()
+void sys_write()
 {
     struct proc* process = current_process;
     struct fd* descriptor = proc_get_fd(syscall_args[1]);
@@ -215,7 +140,7 @@ void vfs_write()
     process->syscall_state = SYSCALL_STATE_BEGIN;
 }
 
-void vfs_write_update(struct proc* process)
+void sys_write_update(struct proc* process)
 {
     int8_t (*write)(fs_write_t* state) = process->write_state.fs.fs->fops->write;
     if (write == NULL) {
@@ -228,8 +153,48 @@ void vfs_write_update(struct proc* process)
     }
 }
 
+void sys_close()
+{
+    struct fd* descriptor = proc_get_fd(syscall_args[0]);
+    if (descriptor == NULL) {
+        return;
+    }
+    free_inode(descriptor->file);
+    descriptor->file = NULL;
+    current_process->open_files[syscall_args[0]] = PROC_FILE_NIL;
+}
 
-void vfs_readdir()
+//int ioctl(int fd, int cmd, void* arg)
+void sys_ioctl()
+{
+    struct fd* descriptor = proc_get_fd(syscall_args[1]);
+    if (descriptor == NULL) {
+        current_process->return_value = -1;
+        return;
+    }
+    struct device* dev = device_lookup(descriptor->file->devfs.devno);
+    current_process->return_value = dev->ops->ioctl(dev, syscall_args[2], (void*) syscall_args[3]);
+}
+
+//int fstat(int fd, struct stat* buff)
+void sys_fstat()
+{
+    struct stat* buff = (struct stat*) syscall_args[1];
+    struct fd* descriptor = proc_get_fd(syscall_args[0]);
+    if (descriptor == NULL) {
+        current_process->return_value = -1;
+        return;
+    }
+    struct inode* i = descriptor->file;
+
+    buff->d_ino = i->file;
+    buff->mode = i->mode;
+    strlcpy(buff->name, i->name, FS_INAME_LEN - 1);
+    //TODO: call the fs fstat implementation
+    current_process->return_value = 0;
+}
+
+void sys_readdir()
 {
     struct proc* process = current_process;
     struct fd* descriptor = proc_get_fd(syscall_args[1]);
@@ -248,7 +213,7 @@ void vfs_readdir()
     process->syscall_state = SYSCALL_STATE_BEGIN;
 }
 
-void vfs_readdir_update(struct proc* process)
+void sys_readdir_update(struct proc* process)
 {
     int8_t (*readdir)(fs_read_t* state) = process->read_state.fs.fs->fops->readdir;
     if (readdir == NULL) {
@@ -263,7 +228,110 @@ void vfs_readdir_update(struct proc* process)
     }
 }
 
+//int getcwd(char* buff, int size)
+void sys_getcwd()
+{
 
+}
+
+void sys_chdir()
+{
+
+}
+
+void sys_chdir_update(struct proc* process)
+{
+
+}
+
+void sys_yield()
+{
+    //yield does nothing lol
+}
+
+void sys_exec()
+{
+
+}
+
+void sys_exec_update(struct proc* process)
+{
+
+}
+
+//void exit(int return_code)
+void sys_exit()
+{
+    current_process->state = DEAD;
+    current_process->return_value = syscall_args[1];
+}
+
+//int kill(pid_t upid)
+void sys_kill()
+{
+    pid_t upid = syscall_args[1] & MAX_PROCESSES_MSK;
+    struct proc* process = &process_table[upid];
+
+    process->state = DEAD;
+    current_process->return_value = 0;
+}
+
+//int wait(pid_t upid)
+void sys_wait()
+{
+    current_process->state = BLOCKED;
+    current_process->waitpid_state.target_pid = syscall_args[1];
+    current_process->syscall_state = SYSCALL_STATE_BEGIN;
+}
+
+void sys_wait_update(struct proc* process)
+{
+    struct proc* target_proc = &process_table[process->waitpid_state.target_pid];
+
+    if (target_proc->state == UNALLOCATED) {
+        process->state = READY;
+        process->return_value = target_proc->return_value;
+        proc_enqueue(process);
+        process->syscall_state = SYSCALL_STATE_NIL;
+    }
+}
+
+void sys_mount()
+{
+
+}
+
+void sys_mount_update(struct proc* process)
+{
+
+}
+
+struct procinfo {
+    pid_t upid;
+    enum proc_state state;
+};
+
+//int sysctl(int cmd, void* buff, int count)
+void sys_sysctl()
+{
+    int cmd = syscall_args[1];
+    void* buff = (void*) syscall_args[2];
+    int count = syscall_args[3];
+    if (cmd == 0) {
+        for (int i = 0; i < MAX_PROCESSES; i++) {
+            struct procinfo* pbuff =  &((struct procinfo*) buff)[i];
+            struct proc* curr = &process_table[i];
+
+            pbuff->state = curr->state;
+            pbuff->upid = curr->pid;
+        }
+        current_process->return_value = 0;
+    } else if (cmd == 1) {
+        char* ubuff = buff;
+        strlcpy(ubuff, (char*) uname, count - 1);
+        current_process->return_value = 0;
+    }
+}
 
 void syscall_update()
 {
