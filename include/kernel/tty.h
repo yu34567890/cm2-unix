@@ -1,3 +1,4 @@
+#include <uapi/tty.h>
 #include <kernel/device.h>
 
 struct tty_hardware_interface;
@@ -8,9 +9,6 @@ struct tty_device {
     struct device_request* current_req;
     uint32_t current_bytes_copied;
 };
-
-#define TTY_IOCTL_CLEAR 0
-#define TTY_IOCTL_SETCURSOR 1
 
 //register the tty driver
 void tty_init();

@@ -1,12 +1,7 @@
 #pragma once
 #include <stdint.h>
+#include <uapi/dev.h>
 
-typedef uint8_t dev_t;
-
-#define MAJOR(DEVNO) (DEVNO >> 4)
-#define MINOR(DEVNO) (DEVNO & 0xF)
-
-#define MKDEV(MAJOR_NO, MINOR_NO) ((MAJOR_NO << 4) | (MINOR_NO & 0xF))
 
 #define DEVICE_OP_RD 0
 #define DEVICE_OP_WR 1
@@ -63,10 +58,6 @@ struct device* device_lookup(dev_t devno);
 int device_destroy(dev_t devno);
 void device_init();
 void device_update(); //global device update
-
-
-
-void debug(char chr);
 
 
 
