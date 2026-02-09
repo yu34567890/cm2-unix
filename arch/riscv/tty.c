@@ -140,12 +140,20 @@ static inline uint8_t tty_read(
         
     if (tty_interface->input_ready) {
         char c = tty_interface->input_character;
-        
+        uint32_t i = tty->current_bytes_copied;
+
         if (c == '\r' || c == '\n') {
             tty_interface->cursor_location = (tty_interface->cursor_location + 32) & 0b11100000;
             return 1;
         }
-        
+        else if (c == 127 || c == 8) {
+            ((char*) current_req->buffer)[--i] = 0;
+            tty->current_bytes_copied = i;
+            tty_interface->character = ' ';
+            tty_interface->cursor_location--;
+            tty_interface->write = 1;
+            return 0;
+        }        
         //TODO: add backspace functionality with "\b \b" response to \b, and add raw mode and echo flag
 
         //echo character
@@ -153,7 +161,6 @@ static inline uint8_t tty_read(
         tty_interface->write = 1;
         tty_interface->cursor_location++;
         
-        uint32_t i = tty->current_bytes_copied;
         ((char*) current_req->buffer)[i++] = c;
         tty->current_bytes_copied = i;
         

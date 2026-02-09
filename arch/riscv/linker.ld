@@ -2,9 +2,10 @@ ENTRY(_start)
 
 MEMORY
 {
-  ROM (rx)   : ORIGIN = 0x0000, LENGTH = 16K /* kernel .text and .rodata */
-  RAM (rwx)  : ORIGIN = 0x4000, LENGTH = 8K /* kernel .data .bss and stack */
-  MMIO (rw) : ORIGIN = 0xFC00, LENGTH = 1K /* 1k mmio */
+  ROM (rx)        : ORIGIN = 0x0000, LENGTH = 16K /* kernel .text and .rodata */
+  RAM (rwx)       : ORIGIN = 0x4000, LENGTH = 8K /* kernel .data .bss and stack */
+  USERSPACE (rwx) : ORIGIN = 0x6000, LENGTH = 40K
+  MMIO (rw)       : ORIGIN = 0xFC00, LENGTH = 1K /* 1k mmio */
 }
 
 SECTIONS
@@ -33,4 +34,5 @@ SECTIONS
   
   _stack_top = ORIGIN(RAM) + LENGTH(RAM);
   _stack_bottom = _stack_top - 2K;
+  _heap_start = ORIGIN(USERSPACE);
 }
