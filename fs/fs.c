@@ -41,7 +41,7 @@ struct inode* create_inode(const char* name)
     free_list_size = --tmp;
     struct inode* new = &inode_table[tmp];
     new->refcount = 1;
-    strncpy(new->name, (char*) name, FS_INAME_LEN);
+    strlcpy(new->name, (char*) name, FS_INAME_LEN - 1);
     return new;
 }
 
