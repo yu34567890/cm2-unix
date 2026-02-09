@@ -1,26 +1,8 @@
 #include <stdint.h>
+#include <uapi/syscalls.h>
 #include <kernel/proc.h>
 
 extern uint32_t syscall_args[4];
-
-enum Syscalls {
-    SYS_OPEN,
-    SYS_READ,
-    SYS_WRITE,
-    SYS_CLOSE,
-    SYS_IOCTL,
-    SYS_FSTAT,
-    SYS_READDIR,
-    SYS_GETCWD,
-    SYS_CHDIR,
-    SYS_YIELD,
-    SYS_EXEC,
-    SYS_EXIT,
-    SYS_KILL,
-    SYS_WAIT,
-    SYS_MOUNT,
-    SYS_SYSCTL
-};
 
 //int open(const char* path, uint8_t flags)
 void sys_open();
