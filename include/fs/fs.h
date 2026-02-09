@@ -1,21 +1,12 @@
 #pragma once
 
+#include <uapi/vfs.h>
 #include <kernel/device.h>
 #include <stdint.h>
 
 struct superblock;
 struct fd;
 struct dentry;
-
-typedef uint32_t ino_t; //this is a unique identifier for an inode, this would be like the cluster + offset in fat
-
-#define FS_INAME_LEN 10
-#define FS_PATH_LEN (FS_INAME_LEN*4)
-#define FS_MODE_DIR 0
-#define FS_MODE_FILE 2
-#define FS_MODE_MOUNT 1
-#define FS_MODE_DEV 3
-#define FS_IS_A_FILE(MODE) (MODE & 0b10)
 
 #define FS_GET_INO_OFF(ID) (ID << 16)
 
@@ -41,15 +32,6 @@ struct inode {
         struct romfs_inode romfs;
         struct devfs_inode devfs;
     };
-};
-
-struct stat {
-    uint32_t size;
-    uint32_t time;
-    uint8_t mode;
-    dev_t dev;
-    ino_t d_ino;
-    char name[FS_INAME_LEN];
 };
 
 typedef struct {
@@ -130,12 +112,6 @@ struct superblock {
     struct super_ops* sops;
     struct file_ops* fops;
 };
-
-//file flag defenitions
-#define FD_R (1 << 0)
-#define FD_W (1 << 1)
-#define FD_CREAT (1 << 2)
-#define FD_NONBLOCK (1 << 3)
 
 struct fd {
     struct inode* file;
