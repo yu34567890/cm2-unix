@@ -1,6 +1,7 @@
 #include <stddef.h>
 #include <kernel/block.h>
 #include <uapi/majors.h>
+#include <lib/kprint.h>
 
 struct disk_hw_interface {
     uint8_t write;
@@ -31,7 +32,7 @@ void gen_disk_init()
 
 struct device* gen_disk_create(int8_t* minor, const void* args)
 {
-    if (disk0.base.ops == NULL) {
+    if (disk0.base.ops != NULL) {
         *minor = -1;
         return NULL;
     }
@@ -86,7 +87,7 @@ static inline uint8_t gen_disk_write(
     uint32_t i = disk->bytes_copied;
     
     for (int k = 0; k < DISK_BATCH_SIZE; k++) {
-        hw->adres = i + current_req->offset;
+        *((volatile uint16_t*) 0xFFC8) = i + current_req->offset;
         hw->in = ((uint8_t*) current_req->buffer)[i];
         hw->write = 1;
 
@@ -109,14 +110,12 @@ static inline uint8_t gen_disk_read(
     volatile struct disk_hw_interface* hw = disk->disk;
     uint32_t i = disk->bytes_copied;
     
-    for (int k = 0; k < DISK_BATCH_SIZE; k++) {
-        hw->adres = i + current_req->offset;
-        ((uint8_t*) current_req->buffer)[i] = hw->out;
+    *((volatile uint16_t*) 0xFFC8) = i + current_req->offset;
+    ((uint8_t*) current_req->buffer)[i] = hw->out;
 
-        if (++i == current_req->count) {
-            disk->bytes_copied = i;
-            return 1;
-        }
+    if (++i == current_req->count) {
+        disk->bytes_copied = i;
+        return 1;
     }
 
     disk->bytes_copied = i;
@@ -128,8 +127,9 @@ void gen_disk_update(struct device* dev)
 {
     struct disk_device* disk = (struct disk_device*) dev;
     struct device_request* current_req = disk->current_req;
-
+    
     if (current_req == NULL) {
+        
         current_req = device_queue_pop(dev);
         if (current_req == NULL)
             return;
