@@ -14,11 +14,14 @@ struct dentry;
 
 struct romfs_inode {
     void* data;
-    uint32_t length;
 };
 
 struct devfs_inode {
     dev_t devno;
+};
+
+struct fatfs_inode {
+    uint8_t fat_index;
 };
 
 struct inode {
@@ -28,9 +31,11 @@ struct inode {
     uint8_t mode; //currently only stores filetype, but i will later expand it will actual permissions and ownership
     ino_t dir; //the parent directory of this inode
     ino_t file; //the inum of this inode
+    uint32_t size;
     union {
         struct romfs_inode romfs;
         struct devfs_inode devfs;
+        struct fatfs_inode fatfs;
     };
 };
 
@@ -90,7 +95,7 @@ typedef struct {
 //these operate on file systems
 struct super_ops {
     int8_t (*lookup)(fs_lookup_t* state); //lookup an inode in a dir
-    int (*mount)(struct inode* mountpoint, struct device* dev, const char* args);
+    int (*mount)(struct inode* mountpoint, dev_t devno, const char* args);
     int (*umount)(struct superblock* fs);
     int (*mkdir)(fs_dirop_t* state);
     int (*rmdir)(fs_dirop_t* state);

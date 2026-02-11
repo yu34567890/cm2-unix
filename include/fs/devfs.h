@@ -19,7 +19,7 @@ extern const struct super_ops devfs_sops;
 extern const struct file_ops devfs_fops;
 
 int8_t devfs_lookup(fs_lookup_t* state);
-int devfs_mount(struct inode* mountpoint, struct device* dev, const char* args);
+int devfs_mount(struct inode* mountpoint, dev_t devno, const char* args);
 
 int8_t devfs_read(fs_read_t* state);
 int8_t devfs_write(fs_write_t* state);

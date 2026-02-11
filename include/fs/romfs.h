@@ -22,7 +22,7 @@ extern const struct super_ops romfs_sops;
 extern const struct file_ops romfs_fops;
 
 int8_t romfs_lookup(fs_lookup_t* state);
-int romfs_mount(struct inode* mountpoint, struct device* dev, const char* args);
+int romfs_mount(struct inode* mountpoint, dev_t devno, const char* args);
 
 int8_t romfs_read(fs_read_t* state);
 int8_t romfs_readdir(fs_read_t* state);

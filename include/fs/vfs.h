@@ -11,7 +11,7 @@ typedef struct {
 typedef struct {
     path_walk_t path;
     struct super_ops* fs;
-    struct device* dev;
+    dev_t devno;
 } vfs_mount_t;
 
 extern struct inode rootfs;

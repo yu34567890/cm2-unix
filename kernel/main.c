@@ -12,12 +12,13 @@
 
 #include <fs/romfs.h>
 #include <fs/devfs.h>
+#include <fs/fatfs.h>
 
 #include <kernel/kshell.h>
 
 void main() {
     dev_t tty0_devno, gpu0_devno, disk0_devno;
-
+    
     //initialize functions
     device_init();
     tty_init();
@@ -42,15 +43,16 @@ void main() {
 
     register_filesystem("romfs", (struct super_ops*) &romfs_sops);
     register_filesystem("devfs", (struct super_ops*) &devfs_sops);
+    register_filesystem("fatfs", (struct super_ops*) &fatfs_sops);
 
-    mount_root("romfs", 255);
+    mount_root("fatfs", disk0_devno); 
     if (mount_devfs("devfs") < 0) {
         panic("devfs mount failed");
     }
     kputs("mounted rootfs and devfs\n");
 
     devfs_create_handle("tty0", tty0_devno);
-    devfs_create_handle("gpu0", gpu0_devno);
+    devfs_create_handle("gpu0", 0x20);
     devfs_create_handle("disk0", disk0_devno);
     kputs("populated devfs\n");
 

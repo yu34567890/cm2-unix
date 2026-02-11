@@ -58,9 +58,8 @@ int mount_root(const char* fs_name, dev_t devno)
     if (fs == NULL) {
         return -1;
     }
-    struct device* dev = device_lookup(devno);
-    
-    return fs->mount(&rootfs, dev, NULL);
+        
+    return fs->mount(&rootfs, devno, NULL);
 }
 
 int mount_devfs(const char* fs_name)
@@ -75,23 +74,21 @@ int mount_devfs(const char* fs_name)
     int8_t rt = 0;
     while (rt == 0) {
         rt = rootfs.fs->sops->lookup(&currstate);
+        device_update();
     }
     if (rt == -1) {
         return -1;
     }
-
-    return lookup_filesystem(fs_name)->mount(currstate.dir, NULL, NULL);
+    currstate.dir->mode = FS_MODE_MOUNT;
+    return lookup_filesystem(fs_name)->mount(currstate.dir, 255, NULL);
 }
 
 
 int8_t mount_init(vfs_mount_t* state, const char* path, const char* fs_name, dev_t devno)
 {
+    state->devno = devno;
     state->fs = lookup_filesystem(fs_name);
     if (state->fs == NULL) {
-        return -1;
-    }
-    state->dev = device_lookup(devno);
-    if (state->dev == NULL) {
         return -1;
     }
     walk_path_init(&state->path, path);
@@ -106,29 +103,13 @@ int8_t mount_update(vfs_mount_t* state)
     }
     if (stat == 1) {
         struct inode* i = state->path.fs_state.dir;
-        if (state->fs->mount(i, state->dev, NULL) < 0) {
+        if (state->fs->mount(i, state->devno, NULL) < 0) {
             return -1;
         };
         i->mode = FS_MODE_MOUNT;
         return 1;
     }
     return 0;
-}
-
-
-
-void vfs_close(struct fd* descriptor)
-{
-    struct inode* i = descriptor->file;
-    if (i == NULL || i->refcount == 0) {
-        return;
-    }
-
-    if (--i->refcount == 0) {
-        free_inode(i);
-    }
-
-    descriptor->file = NULL;
 }
 
 

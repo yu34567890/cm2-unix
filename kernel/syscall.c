@@ -88,7 +88,9 @@ void sys_open_update(struct proc* process)
     } else if (rt == 1) { //we walked the entire path
         uint8_t new_fd = fd_alloc();
         struct fd* fd_p = &fd_table[new_fd];
-        fd_p->file = process->open_state.walker.fs_state.dir;
+        struct inode* i = process->open_state.walker.fs_state.dir;
+        i->refcount++;
+        fd_p->file = i;
         fd_p->flags = 0;
         fd_p->offset = 0;
         
@@ -108,7 +110,7 @@ void sys_read()
 {
     struct proc* process = current_process;
     struct fd* descriptor = proc_get_fd(syscall_args[1]);
-    if (descriptor == NULL) {
+    if (descriptor == NULL || !FS_IS_A_FILE(descriptor->file->mode)) {
         process->return_value = -1;
         return;
     }
@@ -136,7 +138,7 @@ void sys_write()
 {
     struct proc* process = current_process;
     struct fd* descriptor = proc_get_fd(syscall_args[1]);
-    if (descriptor == NULL) {
+    if (descriptor == NULL || !FS_IS_A_FILE(descriptor->file->mode)) {
         process->return_value = -1;
         return;
     }
@@ -204,7 +206,7 @@ void sys_readdir()
 {
     struct proc* process = current_process;
     struct fd* descriptor = proc_get_fd(syscall_args[1]);
-    if (descriptor == NULL) {
+    if (descriptor == NULL || FS_IS_A_FILE(descriptor->file->mode)) {
         process->return_value = -1;
         return;
     }
@@ -284,7 +286,7 @@ void sys_exec_update(struct proc* process)
 		proc_resume(process, -1);
 	} else if (rt == 1) {
         struct inode* file = process->exec_state.walker.fs_state.dir;
-        void *program = malloc(file->romfs.length);
+        void *program = malloc(file->size);
 		if (!program) {
 			proc_resume(process, -1); //out of memory condition
             return;
@@ -295,7 +297,7 @@ void sys_exec_update(struct proc* process)
         f->offset = 0; //start at the begining of the file
 
         //set the read state
-        set_read_state(rstate, f, program, file->romfs.length);
+        set_read_state(rstate, f, program, file->size);
 	}
 }
 

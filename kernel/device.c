@@ -1,5 +1,6 @@
 #include <kernel/device.h>
 #include <stddef.h>
+#include <lib/kprint.h>
 
 struct device_driver driver_registry[DEVICE_DRIVER_MAX];
 
@@ -65,6 +66,7 @@ struct device* device_create(dev_t* devno, uint8_t major, const void* args)
     if (minor < 0) {
         return NULL; //TODO: return the error code somehow
     }
+
     *devno = MKDEV(major, minor);
     return device_instance;
 }

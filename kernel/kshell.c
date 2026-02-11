@@ -129,7 +129,7 @@ void kshell_thread()
 {
     tty0 = open("/dev/tty0", 0);
     char input[LINE_SIZE];
-
+    
     while(1) {
         int errno = 0;
         memset(input, 0, LINE_SIZE);
