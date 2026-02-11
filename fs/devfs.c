@@ -1,5 +1,6 @@
 #include <fs/devfs.h>
 #include <lib/stdlib.h>
+#include <lib/kprint.h>
 
 const struct super_ops devfs_sops = {
     .lookup = &devfs_lookup,
@@ -21,12 +22,6 @@ struct devfs_superblock devfs = {
 int8_t devfs_lookup(fs_lookup_t* state)
 {
     if (*state->fname == '\0') {
-        struct inode* new = create_inode("");
-        new->dir = state->dir->file;
-        new->file = DEVFS_CREATE_INO(DEVFS_MAX_FILES);
-        new->fs = &devfs.base;
-        new->mode = FS_MODE_DIR;
-        state->dir = new;
         return 1;
 
     }
@@ -50,11 +45,10 @@ int8_t devfs_lookup(fs_lookup_t* state)
 }
 
 
-int devfs_mount(struct inode* mountpoint, struct device* dev, const char* args)
+int devfs_mount(struct inode* mountpoint, dev_t devno, const char* args)
 {
     mountpoint->file = DEVFS_CREATE_INO(DEVFS_MAX_FILES);
     mountpoint->fs = &devfs.base;
-    mountpoint->mode = FS_MODE_MOUNT;
     for (int i = 0; i < DEVFS_MAX_FILES; i++) {
         devfs.files[i].devno = 255;
     }

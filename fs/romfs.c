@@ -66,18 +66,10 @@ int8_t romfs_lookup(fs_lookup_t* state)
     }
 
     dir = state->dir->romfs.data;
-    size = state->dir->romfs.length;
+    size = state->dir->size;
     //empty name means return the root
     if (*state->fname == '\0') {
-        struct inode* new = create_inode("");
-        new->dir = state->dir->file;
-        new->file = ROMFS_CREATE_INO(dir);
-        new->fs = &romfs.base;
-        new->mode = FS_MODE_DIR;
-        new->romfs.length = size;
-        new->romfs.data = dir;
-        state->dir = new;
-        return 1;
+       return 1;
     }
 
     for (int i = 0; i < size; i++) {
@@ -89,7 +81,7 @@ int8_t romfs_lookup(fs_lookup_t* state)
             new->file = ROMFS_CREATE_INO(curr->data);
             new->fs = &romfs.base;
             new->mode = curr->mode;
-            new->romfs.length = curr->length;
+            new->size = curr->length;
             new->romfs.data = curr->data;
             state->dir = new;
             return 1;
@@ -99,13 +91,13 @@ int8_t romfs_lookup(fs_lookup_t* state)
     return -1; //file not found
 }
 
-int romfs_mount(struct inode* mountpoint, struct device* dev, const char* args)
+int romfs_mount(struct inode* mountpoint, dev_t devno, const char* args)
 {
     mountpoint->fs = &romfs.base;
     mountpoint->file = ROMFS_CREATE_INO(romfs.root->data);
     mountpoint->mode = FS_MODE_MOUNT;
     mountpoint->romfs.data = romfs.root->data;
-    mountpoint->romfs.length = romfs.root->length;
+    mountpoint->size = romfs.root->length;
     return 0;
 }
 
@@ -124,7 +116,7 @@ int8_t romfs_read(fs_read_t* state)
         return 1;
     }
 
-    if (i == file->romfs.length) {
+    if (i == file->size) {
         return 1;
     }
     return 0;
@@ -153,7 +145,7 @@ int8_t romfs_readdir(fs_read_t* state)
     if (i == state->count) {
         return 1;
     }
-    if (i == dir->romfs.length) {
+    if (i == dir->size) {
         return 1;
     }
     return 0;
