@@ -68,6 +68,7 @@ $(MN_FILE): $(OBJS)
 image: $(MN_FILE)
 	$(OBJCOPY) -O binary $(MN_FILE) image.bin
 	/bin/env python3 $(ROOT)/scripts/$(ARCH)_encoder.py image.bin
+	/bin/env python3 $(ROOT)/scripts/fat8.mkfs.py $(ROOT)/userspace
 
 run: image.bin
 	$(MAKE) -C $(EMULATOR) run ROOT="$(EMULATOR)" OUTPUT_ARGS="$(ROOT)/image.bin $(EMULATOR)/emulator-tilesheet/minesweeper.bmp $(ROOT)/fat8.img"

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import struct
-
+import os
+import sys
 # ---------------- CONSTANTS ----------------
 
 FAT_SIZE = 256          # number of FAT entries
@@ -26,10 +27,10 @@ fat = bytearray([FAT_FREE] * FAT_SIZE)
 fat[0] = FAT_END   # cluster 0 = root directory
 
 # Data region: 256 clusters * 256 bytes = 65536 bytes
-data = bytearray([0] * (16 * CLUSTER_SIZE))
+data = bytearray([0] * (254 * CLUSTER_SIZE))
 
 # Root directory entries (cluster 0)
-root_dir = [None] * ENTRIES_PER_DIR
+dir_table = [[None] * ENTRIES_PER_DIR] * 256
 
 
 # --------- Helper: allocate a cluster ---------
@@ -44,15 +45,15 @@ def alloc_cluster():
 
 # --------- Helper: add entry to root directory ---------
 
-def add_root_entry(name, first_cluster, mode, size):
+def add_entry(dir_cluster, name, first_cluster, mode, size):
     name_bytes = name.encode().ljust(FS_INAME_LEN, b'\x00')
     entry = FILE_ENTRY.pack(name_bytes, first_cluster, mode, size, 0)
 
     for i in range(ENTRIES_PER_DIR):
-        if root_dir[i] is None:
-            root_dir[i] = entry
+        if dir_table[dir_cluster][i] is None:
+            dir_table[dir_cluster][i] = entry
             # write into cluster 0
-            offset = i * ENTRY_SIZE
+            offset = i * ENTRY_SIZE + dir_cluster*CLUSTER_SIZE
             data[offset:offset + ENTRY_SIZE] = entry
             return
 
@@ -61,7 +62,7 @@ def add_root_entry(name, first_cluster, mode, size):
 
 # --------- Create a file ---------
 
-def write_file(name, content):
+def write_file(dir_cluster, name, content):
     # round size up to cluster size
     padded_size = ((len(content) + CLUSTER_SIZE - 1) // CLUSTER_SIZE) * CLUSTER_SIZE
 
@@ -84,16 +85,16 @@ def write_file(name, content):
             fat[cluster] = next_cluster
             cluster = next_cluster
 
-    add_root_entry(name, first, FS_MODE_FILE, padded_size)
+    add_entry(dir_cluster, name, first, FS_MODE_FILE, padded_size)
 
 
 # --------- Create a directory ---------
 
-def make_dir(name):
+def make_dir(dir_cluster, name):
     cluster = alloc_cluster()
     # cluster is already zeroed
-    add_root_entry(name, cluster, FS_MODE_DIR, CLUSTER_SIZE)
-
+    add_entry(dir_cluster, name, cluster, FS_MODE_DIR, CLUSTER_SIZE)
+    return cluster
 
 # --------- Write image to disk ---------
 
@@ -106,12 +107,21 @@ def save_image(filename):
         f.write(data)
 
 
-# ---------------- Example ----------------
 
-write_file("HELLO.TXT", b"Hello FAT8!")
-write_file("README", b"This is a test file.")
-make_dir("dev")
+def traverse(dir, dir_cluster):
+    for e in os.scandir(dir):
+        print(e)
+        if e.is_file():
+            with open(e.path, "rb") as f:
+                write_file(dir_cluster, e.name, f.read())
 
-save_image("fat8.img")
-print("Created fat8.img")
+        if e.is_dir():
+            new_dir = make_dir(dir_cluster, e.name)
+            traverse(e, new_dir)
 
+if len(sys.argv) == 2:
+    traverse(sys.argv[1], 0)
+    save_image("fat8.img")
+    print("Created fat8.img")
+else:
+    print("USAGE: fat8.mkfs.py DIR")
