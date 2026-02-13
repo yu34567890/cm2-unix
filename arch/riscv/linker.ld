@@ -12,6 +12,7 @@ SECTIONS
 {
   .text : {
     KEEP(*(.text.start))
+    KEEP(*(.text.syscall))
     *(.text*)
   } > ROM
 

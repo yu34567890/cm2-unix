@@ -29,18 +29,18 @@ int8_t fatfs_lookup(fs_lookup_t* state)
         return 1;
     }
 
-    if (state->req == NULL) {
-        struct device_request* newreq = device_newreq(fs->dir_cache, FATFS_SECTOR_SIZE, CALC_SADRES(fat_index), DEVICE_OP_RD);
-        device_queue_action(fs->dev, newreq);
-        state->req = newreq;
-    } else if (state->req->state == DEVICE_STATE_FINISHED) {
+    
+
+    if (state->req != NULL && state->req->state == DEVICE_STATE_FINISHED) {
         device_free_req(state->req);
+        state->req = NULL;
          
         for (uint8_t i = 0; i < FATFS_DIR_LEN; i++) {
             struct fatfs_file* entry = &fs->dir_cache[i];
             if (entry->fat_index == 0) {
                 continue;
             }
+
             if (strncmp(entry->name, state->fname, FS_INAME_LEN) == 0) {
                 struct inode* newi = create_inode(entry->name);
                 newi->mode = entry->mode;
@@ -53,9 +53,14 @@ int8_t fatfs_lookup(fs_lookup_t* state)
                 return 1;
             }
         }
-
         return -1;
     }
+
+    if (state->req == NULL) {
+        struct device_request* newreq = device_newreq(fs->dir_cache, FATFS_SECTOR_SIZE, CALC_SADRES(fat_index), DEVICE_OP_RD);
+        device_queue_action(fs->dev, newreq);
+        state->req = newreq;
+    } 
 
     return 0;
 }
@@ -76,7 +81,7 @@ int fatfs_mount(struct inode* mountpoint, dev_t devno, const char* args)
     while(newreq->state != DEVICE_STATE_FINISHED) {
         device_update();
     }
-
+    device_free_req(newreq);
     return 0;
 }
 
@@ -107,17 +112,23 @@ int8_t fatfs_read(fs_read_t* state)
     if (state->req != NULL && state->req->state == DEVICE_STATE_FINISHED) {
         current_sector = fs->fat_cache[current_sector];
         device_free_req(state->req);
+
+        if (current_sector == FATFS_SECTOR_END) {
+            state->bytes_read = bytes_read;
+            return 1;
+        }
         state->req = NULL;
     }
-        
+    
     if (state->req == NULL) {
         uint16_t to_read = state->count - bytes_read;
-        if (to_read > 0 && current_sector != FATFS_SECTOR_END) {
-
-            struct device_request* newreq = device_newreq(state->buffer, to_read & 0xFF, CALC_SADRES(current_sector), DEVICE_OP_RD);
+        if (to_read > 0) {
+            uint16_t tmp = (to_read > FATFS_SECTOR_SIZE) ? FATFS_SECTOR_SIZE : to_read;
+            struct device_request* newreq = device_newreq(state->buffer + bytes_read, tmp, CALC_SADRES(current_sector), DEVICE_OP_RD);
             device_queue_action(fs->dev, newreq);
-            bytes_read += to_read & 0xFF;
-           
+            bytes_read += tmp;
+            state->req = newreq;
+
         } else {
             state->bytes_read = bytes_read;
             return 1;

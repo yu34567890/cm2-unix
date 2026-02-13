@@ -4,6 +4,9 @@
 
 extern uint32_t syscall_args[4];
 
+void set_read_state(fs_read_t* state, struct fd* desc, void* buffer, int count);
+void block_proc();
+
 //int open(const char* path, uint8_t flags)
 void sys_open();
 void sys_open_update(struct proc* process);
@@ -30,9 +33,6 @@ void sys_chdir();
 void sys_chdir_update(struct proc* process);
 //void yield();
 void sys_yield();
-//pid_t exec(const char* path, const char* argv[])
-void sys_exec();
-void sys_exec_update(struct proc* process);
 //void exit(int error_code)
 void sys_exit();
 //int kill(pid_t upid)

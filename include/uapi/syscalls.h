@@ -21,7 +21,8 @@ enum Syscalls {
     SYS_SYSCTL
 };
 
-int syscall(uint32_t a, uint32_t b, uint32_t c, uint32_t d);
 
+typedef int (*syscall_t)(uint32_t a, uint32_t b, uint32_t c, uint32_t d);
+static const syscall_t SYSCALL = (syscall_t)0x00000090;
 
 

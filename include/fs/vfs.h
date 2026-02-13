@@ -4,7 +4,8 @@
 
 typedef struct {
     char path_cpy[FS_PATH_LEN];
-    char* path_ptr;
+    uint8_t path_index;
+    const char* path;
     fs_lookup_t fs_state;
 } path_walk_t;
 

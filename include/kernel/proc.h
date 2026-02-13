@@ -48,12 +48,14 @@ struct proc {
     //this is for syscalls to remember how far they have progressed
     uint8_t syscall_state;
     uint8_t syscall_operation;
-    uint8_t pid;
+    pid_t pid;
     
     //per process file descript table
     uint8_t open_files[PROC_MAXFILES];
     
-    
+    uint32_t program_base;
+    uint32_t program_size;
+
     //this is the state that multi tick syscalls need
     union {
         dev_write_t dev_write_state;
@@ -63,6 +65,7 @@ struct proc {
         vfs_write_t write_state;
         exe_t exec_state;
     };
+    
 };
 
 #define MAX_PROCESSES 4

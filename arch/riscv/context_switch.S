@@ -1,5 +1,5 @@
 
-.section .text
+.section .text.syscall
 
 .extern current_process
 .extern kernel_sp

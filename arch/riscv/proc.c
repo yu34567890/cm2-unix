@@ -1,6 +1,7 @@
 #include <kernel/proc.h>
 #include <kernel/device.h>
 #include <lib/stdlib.h>
+#include <lib/kprint.h>
 #include <kernel/syscall.h>
 #include <kernel/panic.h>
 #include <stddef.h>
@@ -75,6 +76,9 @@ struct proc* proc_create(uint32_t entry_point, uint32_t stack_pointer) {
     new_process->state = READY;
     new_process->return_value = 0;
     new_process->syscall_state = SYSCALL_STATE_NIL;
+
+    new_process->program_base = 0;
+    new_process->program_size = 0;
     
     proc_enqueue(new_process);
     return new_process;
@@ -144,6 +148,7 @@ void proc_update()
         syscall_update();
         new_process = proc_dequeue();
     }
+    //kprintf("pid: %x\n", new_process->pid);
 
     current_process = new_process;
     

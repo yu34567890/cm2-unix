@@ -39,7 +39,7 @@ void main() {
         .x = TILEGPU_X
     });
     device_create(&disk0_devno, GEN_DISK_MAJOR, (void*) 0xFFC3);
-    kputs("Registered devices\n");
+    //kputs("Registered devices\n");
 
     register_filesystem("romfs", (struct super_ops*) &romfs_sops);
     register_filesystem("devfs", (struct super_ops*) &devfs_sops);
@@ -49,12 +49,12 @@ void main() {
     if (mount_devfs("devfs") < 0) {
         panic("devfs mount failed");
     }
-    kputs("mounted rootfs and devfs\n");
+    //kputs("mounted rootfs and devfs\n");
 
     devfs_create_handle("tty0", tty0_devno);
-    devfs_create_handle("gpu0", 0x20);
+    devfs_create_handle("gpu0", gpu0_devno);
     devfs_create_handle("disk0", disk0_devno);
-    kputs("populated devfs\n");
+    //kputs("populated devfs\n");
 
     proc_create((uint32_t) &kshell_thread, (uint32_t) &kshell_thread_stack + KSHELL_STACK_SIZE);
 

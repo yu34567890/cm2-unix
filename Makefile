@@ -56,6 +56,8 @@ CC = $(TOOLCHAIN)-gcc
 OBJCOPY = $(TOOLCHAIN)-objcopy
 READELF = $(TOOLCHAIN)-readelf
 
+.PHONY: userspace
+
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
@@ -68,7 +70,19 @@ $(MN_FILE): $(OBJS)
 image: $(MN_FILE)
 	$(OBJCOPY) -O binary $(MN_FILE) image.bin
 	/bin/env python3 $(ROOT)/scripts/$(ARCH)_encoder.py image.bin
-	/bin/env python3 $(ROOT)/scripts/fat8.mkfs.py $(ROOT)/userspace
+	/bin/env python3 $(ROOT)/scripts/fat8.mkfs.py $(STAGING)
+
+
+STAGING = $(ROOT)/staging
+USERSPACE = $(ROOT)/userspace
+
+userspace:
+	mkdir -p $(STAGING)
+	mkdir -p $(STAGING)/dev
+	mkdir -p $(STAGING)/bin
+	mkdir -p $(STAGING)/home
+	cp $(USERSPACE)/README $(STAGING)/README
+	$(MAKE) -C $(USERSPACE) ROOT=$(USERSPACE) STAGING=$(STAGING) TOOLCHAIN=$(TOOLCHAIN) KERNEL_HEADERS=$(ROOT)/include/uapi all
 
 run: image.bin
 	$(MAKE) -C $(EMULATOR) run ROOT="$(EMULATOR)" OUTPUT_ARGS="$(ROOT)/image.bin $(EMULATOR)/emulator-tilesheet/minesweeper.bmp $(ROOT)/fat8.img"
@@ -84,10 +98,11 @@ dump:
 	$(TOOLCHAIN)-objdump -S -d -M no-aliases main.elf >> verbose_dump.s.dump
 
 clean:
-	rm -f $(OBJS) $(MN_FILE) image.bin
+	rm -rf $(STAGING)
+	rm -f $(OBJS) $(MN_FILE) image.bin fat8.img
 	rm -rf dump.s.dump
 	rm -rf verbose_dump.s.dump
 
-rebuild: clean image size
+rebuild: clean userspace image size
 
 
